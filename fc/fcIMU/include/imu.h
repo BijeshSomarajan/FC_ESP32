@@ -24,7 +24,7 @@ struct _IMU_DATA {
 	//Motion rates
 	float pitchRate, rollRate, yawRate, gRate;
 	//Linear accelerations
-	float linAxGRaw, linAyGRaw, linAzGRaw;
+	float linAxGRaw, linAyGRaw, linAzGRaw ;
 	float linAxG, linAyG, linAzG;
 	float linVz, linVx, linVy;
 
@@ -33,16 +33,14 @@ struct _IMU_DATA {
 };
 
 extern IMU_DATA imuData ;
+#define MAG_INCLINATION -1.41f //-1.41// 1.21?https://www.magnetic-declination.com/India/Bangalore/1132482.html
+#define IMU_VEL_TRIG_APPROX_ENABLED 1
+#define IMU_RM_LINEAR_ACC_ENABLED 0
+
 uint16_t getImuStabilizationCount(void);
 uint8_t imuInit(float magIncl);
 void imuSetMode(uint8_t stabilize);
 void imuReset(uint8_t hard);
 void imuUpdate(float dt);
-
-void setImuXAccBias(float bias);
-void setImuYAccBias(float bias);
 void setImuZAccBias(float bias);
-
-#define MAG_INCLINATION -1.21f //-1.41// 1.21?https://www.magnetic-declination.com/India/Bangalore/1132482.html
-
 #endif

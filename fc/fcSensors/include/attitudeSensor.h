@@ -14,6 +14,10 @@ struct _ATTITUDE_DATA {
 	float accDt;
 	float magDt;
 	float tempDt;
+
+	float accPitch;
+	float accRoll;
+
 	uint8_t cpu;
 };
 
@@ -25,10 +29,21 @@ extern ATTITUDE_DATA attitudeData;
 #define SENSOR_TEMP_SAMPLE_PERIOD LSM9DS1_TEMP_SAMPLE_PERIOD
 
 //Sensor Low Pass Frequencies
-#define SENSOR_GYRO_LPF_FREQUENCY 120.0f //500
-#define SENSOR_ACC_LPF_FREQUENCY  40.0f  //10
+#define SENSOR_GYRO_LPF_FREQUENCY 400.0f //500
+#define SENSOR_ACC_LPF_FREQUENCY  100.0f  //10
 #define SENSOR_MAG_LPF_FREQUENCY  50.0f //100
-#define SENSOR_TEMP_LPF_FREQUENCY 10.0f
+#define SENSOR_TEMP_LPF_FREQUENCY 50.0f
+
+//Acc Biquad NTF filter settings
+#define SENSOR_GYRO_NTF_DEFAULT_CENTER_FREQ SENSOR_GYRO_LPF_FREQUENCY /// 2.0f
+#define SENSOR_ACC_NTF_DEFAULT_CENTER_FREQ SENSOR_ACC_LPF_FREQUENCY // / 2.0f
+#define SENSOR_ACC_GYRO_NOISE_GAIN_FACTOR 1.25f //No Rationale :(
+
+#define SENSOR_ACC_BI_NTF_PEAK_GAIN 1.0f
+#define SENSOR_ACC_BI_NTF_Q  0.33f //0.920f // Greater more > Sharp filtering
+
+#define SENSOR_GYRO_BI_NTF_PEAK_GAIN 1.0f
+#define SENSOR_GYRO_BI_NTF_Q  0.33f //0.920f // Greater more > Sharp filtering
 
 //Acc Biquad Low Pass filter settings
 #define SENSOR_ACC_BI_LPF_PEAK_GAIN  1.0f
@@ -39,9 +54,9 @@ extern ATTITUDE_DATA attitudeData;
 #define SENSOR_GYRO_BI_LPF_CENTER_FREQUENCY SENSOR_GYRO_LPF_FREQUENCY
 #define SENSOR_GYRO_BI_LPF_Q 0.15f // 0.25f
 
-#define  SENSOR_ACC_FLYABLE_VALUE_XY_LIMIT 3.0f // G
-#define  SENSOR_ACC_FLYABLE_VALUE_Z_LIMIT 4.0f // G
-#define  SENSOR_GYRO_FLYABLE_VALUE_LIMIT 200.0f //degrees/sec
+#define SENSOR_ACC_FLYABLE_VALUE_XY_LIMIT 3.0f // G
+#define SENSOR_ACC_FLYABLE_VALUE_Z_LIMIT 4.0f // G
+#define SENSOR_GYRO_FLYABLE_VALUE_LIMIT 200.0f //degrees/sec
 
 /*------------------- Calibration related  -------------*/
 #define SENSOR_AG_OFFSET_CALIB_SAMPLE_COUNT 2000.0f
@@ -61,7 +76,7 @@ extern ATTITUDE_DATA attitudeData;
 
 #define LSMDS1_TEMP_DELTA_SCALE_FACTOR  1.0f
 
-uint8_t initAttitudeSensors(void);
+uint8_t initAttitudeSensors(float motorKv, float batVolt, float motorNoiseFactor);
 void readAccAndGyroSensor(float dt);
 void readAccSensor(float dt);
 void readGyroSensor(float dt);
@@ -70,4 +85,6 @@ void readMagSensor(float dt);
 void calculateAccAndGyroBias(void);
 void calculateMagBias(void);
 void calculateAccAndGyroTempCoeff(void);
+float getMaxValidG(void);
+void calculateMotorNoise(float throttlePercentage);
 #endif

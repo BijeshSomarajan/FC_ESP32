@@ -3,31 +3,14 @@
 #include "attitudeSensor.h"
 #include "mahonyFilter_BF.h"
 
-IMU_DATA imuData ;
+IMU_DATA imuData;
 extern ATTITUDE_DATA attitudeData;
 
 float imuMagInclination = 0;
-float imuXAccBias = 0.0f;
-float imuYAccBias = 0.0f;
 float imuZAccBias = 0.0f;
 
-LEAKYINTEGRATIONFILTER imuXLeakyIntFilter;
-LEAKYINTEGRATIONFILTER imuYLeakyIntFilter;
 LEAKYINTEGRATIONFILTER imuZLeakyIntFilter;
-
-LOWPASSFILTER imuLinAccXLPF;
-LOWPASSFILTER imuLinAccYLPF;
 LOWPASSFILTER imuLinAccZLPF;
-
-float calculateLinearAccDt = 0;
-
-void setImuXAccBias(float bias) {
-	imuXAccBias = bias;
-}
-
-void setImuYAccBias(float bias) {
-	imuYAccBias = bias;
-}
 
 void setImuZAccBias(float bias) {
 	imuZAccBias = bias;
@@ -41,51 +24,73 @@ void imuSetMode(uint8_t stabilize) {
 	imuFilterSetMode(stabilize);
 }
 
+
+#if IMU_RM_LINEAR_ACC_ENABLED == 1
 //Calculates linear acceleration
 void calculateLinearAcc(float dt) {
-	float linAxG = (2 * (imuData.q1 * imuData.q3 - imuData.q0 * imuData.q2)) * 0.98f;
-	float linAyG = (2 * (imuData.q0 * imuData.q1 + imuData.q2 * imuData.q3)) * 0.98f;
 	float linAzG = (imuData.q0 * imuData.q0 - imuData.q1 * imuData.q1 - imuData.q2 * imuData.q2 + imuData.q3 * imuData.q3) * 0.98f;
-
-	float sensorAxG = attitudeData.axG;
-	float sensorAyG = attitudeData.ayG;
 	float sensorAzG = attitudeData.azG;
-
 #if IMU_LIN_ACC_LPF_ENABLED == 1
-	sensorAxG = lowPassFilterUpdate(&imuLinAccXLPF, sensorAxG, dt);
-	sensorAyG = lowPassFilterUpdate(&imuLinAccYLPF, sensorAyG, dt);
 	sensorAzG = lowPassFilterUpdate(&imuLinAccZLPF, sensorAzG, dt);
 #endif
-
-	imuData.linAxGRaw = sensorAxG - linAxG;
-	imuData.linAyGRaw = sensorAyG - linAyG;
 	imuData.linAzGRaw = sensorAzG - linAzG;
-
-	imuData.linAxG = applyDeadBandFloat(imuData.linAxGRaw - imuXAccBias, IMU_X_ACC_DB);
-	imuData.linAyG = applyDeadBandFloat(imuData.linAyGRaw - imuYAccBias, IMU_Y_ACC_DB);
 	imuData.linAzG = applyDeadBandFloat(imuData.linAzGRaw - imuZAccBias, IMU_Z_ACC_DB);
-
 	float pitchAbs = fabsf(imuData.pitch);
 	float rollAbs = fabsf(imuData.roll);
-
 	if (pitchAbs > IMU_LIN_ACC_VALID_ANGLE || rollAbs > IMU_LIN_ACC_VALID_ANGLE) {
 		imuData.linAxG = 0;
 		imuData.linAyG = 0;
 		imuData.linAzG = 0;
-
 		imuData.linVx = 0;
 		imuData.linVy = 0;
 		imuData.linVz = 0;
-
-		leakyIntegrationFilterReset(&imuXLeakyIntFilter, 0);
-		leakyIntegrationFilterReset(&imuYLeakyIntFilter, 0);
+		imuData.linVzHf = 0;
 		leakyIntegrationFilterReset(&imuZLeakyIntFilter, 0);
 	} else {
-		imuData.linVx = leakyIntegrationFilterUpdate(&imuXLeakyIntFilter, imuData.linAxG, dt) * IMU_ACC_VEL_GAIN;
-		imuData.linVy = leakyIntegrationFilterUpdate(&imuYLeakyIntFilter, imuData.linAyG, dt) * IMU_ACC_VEL_GAIN;
 		imuData.linVz = leakyIntegrationFilterUpdate(&imuZLeakyIntFilter, imuData.linAzG, dt) * IMU_ACC_VEL_GAIN;
 	}
 }
+#else
+//Calculates linear acceleration
+void calculateLinearAcc(float dt) {
+	float sensorAxG = attitudeData.axG;
+	float sensorAyG = attitudeData.ayG;
+	float sensorAzG = attitudeData.azG;
+#if IMU_LIN_ACC_LPF_ENABLED == 1
+	sensorAzG = lowPassFilterUpdate(&imuLinAccZLPF, sensorAzG, dt);
+#endif
+	float axSquare = sensorAxG * sensorAxG;
+	float aySquare = sensorAyG * sensorAyG;
+	float azSquare = sensorAzG * sensorAzG;
+#if IMU_VEL_TRIG_APPROX_ENABLED == 1
+	float accRoll = atanApprox(sensorAxG / sqrtf(aySquare + azSquare));
+	float accPitch = atanApprox(sensorAyG / sqrtf(axSquare + azSquare));
+	float sinAccRoll = sinApprox(accRoll);
+	float sinAccPitch = sinApprox(accPitch);
+	float cosAccRoll = cosApprox(accRoll);
+	float cosAccPitch = cosApprox(accPitch);
+#else
+	float accRoll = atanf(sensorAxG / sqrtf(aySquare + azSquare));
+	float accPitch = atanf(sensorAyG / sqrtf(axSquare + azSquare));
+	float sinAccRoll = sinf(accRoll);
+	float sinAccPitch = sinf(accPitch);
+	float cosAccRoll = cosf(accRoll);
+	float cosAccPitch = cosf(accPitch);
+#endif
+	float sensorAzGFinal = sensorAxG * sinAccRoll + sensorAyG * sinAccPitch + sensorAzG * cosAccRoll * cosAccPitch;
+	imuData.linAzGRaw = sensorAzGFinal - 1.0f;
+	imuData.linAzG = applyDeadBandFloat(imuData.linAzGRaw - imuZAccBias, IMU_Z_ACC_DB);
+	float pitchAbs = fabsf(imuData.pitch);
+	float rollAbs = fabsf(imuData.roll);
+	if (pitchAbs > IMU_LIN_ACC_VALID_ANGLE || rollAbs > IMU_LIN_ACC_VALID_ANGLE) {
+		imuData.linAzG = 0;
+		imuData.linVz = 0;
+		leakyIntegrationFilterReset(&imuZLeakyIntFilter, 0);
+	} else {
+		imuData.linVz = leakyIntegrationFilterUpdate(&imuZLeakyIntFilter, imuData.linAzG, dt) * IMU_ACC_VEL_GAIN;
+	}
+}
+#endif
 
 /*************************************************************************/
 //Does imuData fusion , returns 1 if done
@@ -100,7 +105,6 @@ void imuUpdate(float dt) {
 	imuData.yawRate = attitudeData.gzDS;
 	imuData.gRate = attitudeData.azG;
 	calculateLinearAcc(dt);
-
 }
 
 /*****************************************************************************************************************/
@@ -110,16 +114,10 @@ uint8_t imuInit(float pMagInclination) {
 	imuReset(1);
 	imuMagInclination = pMagInclination;
 	imuFilterInit(1);
-	leakyIntegrationFilterInit(&imuXLeakyIntFilter, IMU_LIN_VEL_BIAS_LEAK_FACTOR);
-	leakyIntegrationFilterInit(&imuYLeakyIntFilter, IMU_LIN_VEL_BIAS_LEAK_FACTOR);
 	leakyIntegrationFilterInit(&imuZLeakyIntFilter, IMU_ALT_VEL_BIAS_LEAK_FACTOR);
-
 #if IMU_LIN_ACC_LPF_ENABLED == 1
-	lowPassFilterInit(&imuLinAccXLPF, IMU_LIN_ACC_LPF_CUTOFF);
-	lowPassFilterInit(&imuLinAccYLPF, IMU_LIN_ACC_LPF_CUTOFF);
 	lowPassFilterInit(&imuLinAccZLPF, IMU_LIN_ACC_LPF_CUTOFF);
 #endif
-
 	return 1;
 }
 
@@ -127,16 +125,10 @@ uint8_t imuInit(float pMagInclination) {
 // Resets Madgwick filter.
 /****************************************************************************************************************/
 void imuReset(uint8_t hard) {
-	leakyIntegrationFilterReset(&imuXLeakyIntFilter, 0);
-	leakyIntegrationFilterReset(&imuYLeakyIntFilter, 0);
 	leakyIntegrationFilterReset(&imuZLeakyIntFilter, 0);
-
-#if IMU_X_LIN_ACC_LPF_ENABLED == 1
-	lowPassFilterResetToValue(&imuLinAccXLPF, sensorData.axG);
-	lowPassFilterResetToValue(&imuLinAccYLPF, sensorData.ayG);
-	lowPassFilterResetToValue(&imuLinAccZLPF, sensorData.azG);
+#if IMU_LIN_ACC_LPF_ENABLED == 1
+	lowPassFilterResetToValue(&imuLinAccZLPF, attitudeData.azG);
 #endif
-
 	if (hard) {
 		//Reset the quaternion
 		imuData.q0 = 1.0f;

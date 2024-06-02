@@ -11,8 +11,10 @@ struct _FC_STATUS_DATA {
 	uint8_t enableAltitudeHold, enableGlobalPositionHold, enableTerrainPosHold, enableRTH, enableTerrainAlt;
 	//Enabled status
 	uint8_t altitudeHoldEnabled;
-	//Active states
-	uint8_t canStart, canArm, isArmed, isJustArmed, hasCrashLanded, isGlobalPosHoldModeActive, isRTHModeActive, isTerrainAltModeActive, isHeadLessModeActive;
+	//FC Statues
+	uint8_t canStart, canArm, canStabilize ,canFly, hasCrashed, isIMUStabilized, isAltStabilized;
+	//FC Modes
+	uint8_t isGlobalPosHoldModeActive, isRTHModeActive, isTerrainAltModeActive, isHeadLessModeActive;
 	//Flag to state if idle or not
 	uint8_t hasTakenOff;
 	//Flag to state if landing landing mode is active
@@ -24,15 +26,12 @@ struct _FC_STATUS_DATA {
 	//The home position
 	double positionXHome, positionYHome;
 	uint8_t isPositionHomeSet;
-
 	//Flight reference values
 	float headingRef, headingHomeRef;
 	float altitudeRefSeaLevel;
-
 	//Throttle reference values
 	float currentThrottle;
 	float throttlePercentage;
-
 	//The config mode
 	uint8_t isConfigMode;
 };

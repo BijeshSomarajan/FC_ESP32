@@ -1,21 +1,18 @@
+#include "rcSensor.h"
 #include "debugManager.h"
 
+#include "fcStatus.h"
+#include "control.h"
+#include "lowPassFilter.h"
+#include "imu.h"
+#include "altitudeSensor.h"
+#include "attitudeSensor.h"
+#include "configSensor.h"
+#include "deltaTimer.h"
+#include "managerConfig.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "sdkconfig.h"
-#include "esp_timer.h"
-#include "deltaTimer.h"
-#include "fcLogger.h"
-#include "attitudeSensor.h"
-#include "imu.h"
-#include "rcSensor.h"
-#include "pwmSensor.h"
-#include "altitudeSensor.h"
-#include "managerConfig.h"
-#include "configSensor.h"
-#include "fcStatus.h"
-#include "rcManager.h"
-#include "control.h"
 
 TaskHandle_t debuggerTaskHandle;
 float debugUpdateDt = 0;
@@ -28,9 +25,9 @@ void debugTime() {
 	DEBUG_DATA_BUFFER[3] = 1.0f / attitudeData.magDt;
 	DEBUG_DATA_BUFFER[4] = 1.0f / attitudeData.tempDt;
 	DEBUG_DATA_BUFFER[5] = 1.0f / altitudeData.dt;
-	DEBUG_DATA_BUFFER[6] = 1.0f / rcData.processDt;
-	DEBUG_DATA_BUFFER[7] = 1.0f / rcData.readDt;
-	sendConfigData(DEBUG_DATA_BUFFER, 8, CMD_FC_DATA);
+	DEBUG_DATA_BUFFER[6] = rcData.cpu;
+//	DEBUG_DATA_BUFFER[7] = 1.0f / rcData.readDt;
+	sendConfigData(DEBUG_DATA_BUFFER, 7, CMD_FC_DATA);
 }
 
 void debugImu() {
@@ -43,42 +40,76 @@ void debugImu() {
 	DEBUG_DATA_BUFFER[5] = imuData.heading;
 
 	DEBUG_DATA_BUFFER[6] = imuData.linVz * 100;
-	DEBUG_DATA_BUFFER[7] = 1.0f/imuData.dt;
+	DEBUG_DATA_BUFFER[7] = 1.0f / imuData.dt;
 
 	sendConfigData(DEBUG_DATA_BUFFER, 8, CMD_FC_DATA);
 }
+extern float currentGyroNoiseFrequency;
+extern float currentAccNoiseFrequency;
 
 void debugAttitude() {
-	DEBUG_DATA_BUFFER[0] = controlData.pitchControl;
-	DEBUG_DATA_BUFFER[1] = controlData.rollControl;
-	DEBUG_DATA_BUFFER[2] = controlData.yawControl;
-
-	DEBUG_DATA_BUFFER[3] = imuData.pitchRate * 100;
-	DEBUG_DATA_BUFFER[4] = imuData.rollRate * 100;
-	DEBUG_DATA_BUFFER[5] = imuData.yawRate * 100;
-
-	DEBUG_DATA_BUFFER[6] = imuData.pitch * 10;
-	DEBUG_DATA_BUFFER[7] = imuData.roll * 10;
-
-	sendConfigData(DEBUG_DATA_BUFFER, 5, CMD_FC_DATA);
+	/*
+	 DEBUG_DATA_BUFFER[0] = imuData.linAzGRaw * 1000;
+	 DEBUG_DATA_BUFFER[1] = imuData.linVz * 1000;
+	 DEBUG_DATA_BUFFER[2] = 1.0f / imuData.dt;
+	 DEBUG_DATA_BUFFER[3] = 1.0f / attitudeData.gyroDt;
+	 DEBUG_DATA_BUFFER[4] = 1.0f / attitudeData.accDt;
+	 */
+	DEBUG_DATA_BUFFER[0] = imuData.pitch * 10;
+	DEBUG_DATA_BUFFER[1] = imuData.roll * 10;
+	DEBUG_DATA_BUFFER[2] = imuData.pitchRate * 10;
+	DEBUG_DATA_BUFFER[3] = imuData.rollRate * 10;
+	DEBUG_DATA_BUFFER[4] = imuData.linAzGRaw * 1000;
+	DEBUG_DATA_BUFFER[5] = imuData.linVz * 1000;
+	DEBUG_DATA_BUFFER[6] = 1.0f / (100 * imuData.dt);
+	sendConfigData(DEBUG_DATA_BUFFER, 8, CMD_FC_DATA);
 }
 
+void debugRC() {
+	DEBUG_DATA_BUFFER[0] = fcStatusData.canStart * 10;
+	DEBUG_DATA_BUFFER[5] = fcStatusData.canFly * 10;
+	DEBUG_DATA_BUFFER[2] = fcStatusData.canStabilize * 10;
+	DEBUG_DATA_BUFFER[2] = rcData.RC_DELTA_DATA[RC_TH_CHANNEL_INDEX];
+	DEBUG_DATA_BUFFER[3] = rcData.RC_DELTA_DATA[RC_PITCH_CHANNEL_INDEX];
+	DEBUG_DATA_BUFFER[4] = rcData.RC_DELTA_DATA[RC_ROLL_CHANNEL_INDEX];
+	DEBUG_DATA_BUFFER[5] = rcData.RC_DELTA_DATA[RC_YAW_CHANNEL_INDEX];
+	DEBUG_DATA_BUFFER[6] = 1.0f / rcData.processDt;
+	DEBUG_DATA_BUFFER[7] = 1.0f / imuData.dt;
+	sendConfigData(DEBUG_DATA_BUFFER, 8, CMD_FC_DATA);
+}
+
+void debugFCStatus() {
+	DEBUG_DATA_BUFFER[0] = fcStatusData.canStart * 10;
+	DEBUG_DATA_BUFFER[1] = fcStatusData.canStabilize * 10;
+	DEBUG_DATA_BUFFER[2] = fcStatusData.canFly * 10;
+	DEBUG_DATA_BUFFER[3] = rcData.throttleCentered;
+	DEBUG_DATA_BUFFER[4] = fcStatusData.enableAltitudeHold;
+	DEBUG_DATA_BUFFER[5] = rcData.RC_EFFECTIVE_DATA[RC_TH_CHANNEL_INDEX];
+	DEBUG_DATA_BUFFER[6] = fcStatusData.hasCrashed * 10;
+	DEBUG_DATA_BUFFER[7] = fcStatusData.hasTakenOff * 10;
+	sendConfigData(DEBUG_DATA_BUFFER, 8, CMD_FC_DATA);
+}
+
+extern LOWPASSFILTER altMgrThrottleControlLPF;
 void debugAltitude() {
-	DEBUG_DATA_BUFFER[0] = altitudeData.altitudeSeaLevelHome;
-	DEBUG_DATA_BUFFER[1] = altitudeData.altitudeSeaLevelRaw;
-	DEBUG_DATA_BUFFER[2] = altitudeData.altitudeSeaLevel;
-	DEBUG_DATA_BUFFER[3] = fcStatusData.altitudeHoldEnabled * 100;
-	DEBUG_DATA_BUFFER[4] = rcData.throttleCentered * 100;
-	DEBUG_DATA_BUFFER[5] = altitudeData.verticalVelocity * 100;
-	DEBUG_DATA_BUFFER[6] = controlData.altitudeControl * 100;
-	DEBUG_DATA_BUFFER[7] = 1.0f / altitudeData.dt;
+	DEBUG_DATA_BUFFER[0] = (altitudeData.altitudeSeaLevelCoarse - altitudeData.altitudeSeaLevelHome) *10;
+	DEBUG_DATA_BUFFER[1] = (altitudeData.altitudeSeaLevel - altitudeData.altitudeSeaLevelHome) *10;
+	DEBUG_DATA_BUFFER[2] = altitudeData.verticalVelocity * 100;
+	DEBUG_DATA_BUFFER[3] = imuData.linVz * 1000;
+	DEBUG_DATA_BUFFER[4] = controlData.altitudeControl * 10;
+	DEBUG_DATA_BUFFER[5] = (controlData.altitudeControl+controlData.throttleControl) * 10;
+	DEBUG_DATA_BUFFER[6] = altMgrThrottleControlLPF.output * 10;
+	DEBUG_DATA_BUFFER[7] = fcStatusData.throttlePercentage *10;
 	sendConfigData(DEBUG_DATA_BUFFER, 8, CMD_FC_DATA);
 }
 
 void doFcDebug(float dt) {
-	//debugAltitude();
-	debugTime();
+	debugAltitude();
+	//debugAttitude();
+	//debugRC();
+	//debugTime();
 	//debugImu();
+	//debugFCStatus();
 }
 
 void debuggerManagerTask(void *pvParameters) {

@@ -9,8 +9,13 @@
 
 ATTITUDE_DATA attitudeData;
 
+//BiQuald LPF and Notch Filters
 BIQUADFILTER sensorAccXBiLpF, sensorAccYBiLpF, sensorAccZBiLpF;
 BIQUADFILTER sensorGyroXBiLpF, sensorGyroYBiLpF, sensorGyroZBiLpF;
+BIQUADFILTER sensorAccXBiNtF, sensorAccYBiNtF, sensorAccZBiNtF;
+BIQUADFILTER sensorGyroXBiNtF, sensorGyroYBiNtF, sensorGyroZBiNtF;
+
+//Low pass filters
 LOWPASSFILTER sensorTempLPF;
 LOWPASSFILTER sensorMagXLPF, sensorMagYLPF, sensorMagZLPF;
 
@@ -19,6 +24,11 @@ LOWPASSFILTER sensorAccXCalibLPF, sensorAccYCalibLPF, sensorAccZCalibLPF;
 LOWPASSFILTER sensorGyroXCalibLPF, sensorGyroYCalibLPF, sendorGyroZCalibLPF;
 LOWPASSFILTER lsm9ds1TempCalibLPF;
 int32_t sensorAttitudeTempCalibData[9];
+
+float maxMotorNoiseFrequency;
+float motorNoiseThFrequencyGain;
+float currentGyroNoiseFrequency;
+float currentAccNoiseFrequency;
 
 void resetAttitudeSensors() {
 	attitudeData.axG = 0;
@@ -110,7 +120,7 @@ void loadAttitudeSensorConfig() {
 	lsm9ds1.gyroZTempCoeff[3] = getCalibrationValue(CALIB_PROP_IMU_TEMP_COEFF_GZ_C3_ADDR) / 10000000.0f; //0.00962;
 }
 
-uint8_t initAttitudeSensors() {
+uint8_t initAttitudeSensors(float motorKv, float batVolt, float nMotor) {
 	uint8_t status = initlsm9ds1();
 	if (status) {
 		loadAttitudeSensorConfig();
@@ -130,6 +140,15 @@ uint8_t initAttitudeSensors() {
 		//LPF for Temperature
 		lowPassFilterInit(&sensorTempLPF, SENSOR_TEMP_LPF_FREQUENCY);
 
+		//BiQuad NTF filters for ACC
+		biQuadFilterInit(&sensorAccXBiNtF, BIQUAD_NOTCH, SENSOR_ACC_NTF_DEFAULT_CENTER_FREQ, LSM9DS1_ACC_SAMPLE_FREQUENCY, SENSOR_ACC_BI_NTF_Q, SENSOR_ACC_BI_NTF_PEAK_GAIN);
+		biQuadFilterInit(&sensorAccYBiNtF, BIQUAD_NOTCH, SENSOR_ACC_NTF_DEFAULT_CENTER_FREQ, LSM9DS1_ACC_SAMPLE_FREQUENCY, SENSOR_ACC_BI_NTF_Q, SENSOR_ACC_BI_NTF_PEAK_GAIN);
+		biQuadFilterInit(&sensorAccZBiNtF, BIQUAD_NOTCH, SENSOR_ACC_NTF_DEFAULT_CENTER_FREQ, LSM9DS1_ACC_SAMPLE_FREQUENCY, SENSOR_ACC_BI_NTF_Q, SENSOR_ACC_BI_NTF_PEAK_GAIN);
+		//BiQuad NTF filters for Gyro
+		biQuadFilterInit(&sensorGyroXBiNtF, BIQUAD_NOTCH, SENSOR_GYRO_NTF_DEFAULT_CENTER_FREQ, LSM9DS1_GYRO_SAMPLE_FREQUENCY, SENSOR_GYRO_BI_NTF_Q, SENSOR_GYRO_BI_NTF_PEAK_GAIN);
+		biQuadFilterInit(&sensorGyroYBiNtF, BIQUAD_NOTCH, SENSOR_GYRO_NTF_DEFAULT_CENTER_FREQ, LSM9DS1_GYRO_SAMPLE_FREQUENCY, SENSOR_GYRO_BI_NTF_Q, SENSOR_GYRO_BI_NTF_PEAK_GAIN);
+		biQuadFilterInit(&sensorGyroZBiNtF, BIQUAD_NOTCH, SENSOR_GYRO_NTF_DEFAULT_CENTER_FREQ, LSM9DS1_GYRO_SAMPLE_FREQUENCY, SENSOR_GYRO_BI_NTF_Q, SENSOR_GYRO_BI_NTF_PEAK_GAIN);
+
 		//Low pass filters for Calibration
 		lowPassFilterInit(&sensorAccXCalibLPF, SENSOR_AG_CALIB_LOWPASS_FREQ);
 		lowPassFilterInit(&sensorAccYCalibLPF, SENSOR_AG_CALIB_LOWPASS_FREQ);
@@ -143,11 +162,33 @@ uint8_t initAttitudeSensors() {
 
 		logString("[attitude] > Filters initialized Success\n");
 
+		maxMotorNoiseFrequency = ((motorKv * batVolt) / 60.0f) * nMotor;
+		motorNoiseThFrequencyGain = (maxMotorNoiseFrequency / 100.0f) * SENSOR_ACC_GYRO_NOISE_GAIN_FACTOR;
+		calculateMotorNoise(0);
+
 		logString("[attitude] > Success\n");
 	} else {
 		logString("[attitude] > Failed\n");
 	}
 	return status;
+}
+
+void calculateMotorNoise(float throttlePercentage) {
+	currentGyroNoiseFrequency = maxMotorNoiseFrequency * (throttlePercentage <= 0 ? 1 : throttlePercentage) * motorNoiseThFrequencyGain;
+	currentAccNoiseFrequency = currentGyroNoiseFrequency;
+
+	if (currentAccNoiseFrequency < SENSOR_ACC_NTF_DEFAULT_CENTER_FREQ) {
+		currentAccNoiseFrequency = SENSOR_ACC_NTF_DEFAULT_CENTER_FREQ;
+	}
+	if (currentGyroNoiseFrequency < SENSOR_GYRO_NTF_DEFAULT_CENTER_FREQ) {
+		currentGyroNoiseFrequency = SENSOR_GYRO_NTF_DEFAULT_CENTER_FREQ;
+	}
+	biQuadFilterSetCenterFreq(&sensorAccXBiNtF, currentAccNoiseFrequency);
+	biQuadFilterSetCenterFreq(&sensorAccYBiNtF, currentAccNoiseFrequency);
+	biQuadFilterSetCenterFreq(&sensorAccZBiNtF, currentAccNoiseFrequency);
+	biQuadFilterSetCenterFreq(&sensorGyroXBiNtF, currentGyroNoiseFrequency);
+	biQuadFilterSetCenterFreq(&sensorGyroYBiNtF, currentGyroNoiseFrequency);
+	biQuadFilterSetCenterFreq(&sensorGyroZBiNtF, currentGyroNoiseFrequency);
 }
 
 void processAccSensorData(float dt) {
@@ -168,9 +209,20 @@ void processAccSensorData(float dt) {
 	attitudeData.ayG = constrainToRangeF(attitudeData.ayG, -SENSOR_ACC_FLYABLE_VALUE_XY_LIMIT, SENSOR_ACC_FLYABLE_VALUE_XY_LIMIT);
 	attitudeData.azG = constrainToRangeF(attitudeData.azG, -SENSOR_ACC_FLYABLE_VALUE_Z_LIMIT, SENSOR_ACC_FLYABLE_VALUE_Z_LIMIT);
 
+	//Apply notch filtering
+	attitudeData.axG = biQuadFilterUpdate(&sensorAccXBiNtF, attitudeData.axG);
+	attitudeData.ayG = biQuadFilterUpdate(&sensorAccYBiNtF, attitudeData.ayG);
+	attitudeData.azG = biQuadFilterUpdate(&sensorAccZBiNtF, attitudeData.azG);
+
+	//Apply lowpass filtering
 	attitudeData.axG = biQuadFilterUpdate(&sensorAccXBiLpF, attitudeData.axG);
 	attitudeData.ayG = biQuadFilterUpdate(&sensorAccYBiLpF, attitudeData.ayG);
 	attitudeData.azG = biQuadFilterUpdate(&sensorAccZBiLpF, attitudeData.azG);
+
+}
+
+float getMaxValidG() {
+	return getLsm9ds1MaxValidG();
 }
 
 void processGyroSensorData(float dt) {
@@ -190,6 +242,11 @@ void processGyroSensorData(float dt) {
 	attitudeData.gxDS = constrainToRangeF(attitudeData.gxDS, -SENSOR_GYRO_FLYABLE_VALUE_LIMIT, SENSOR_GYRO_FLYABLE_VALUE_LIMIT);
 	attitudeData.gyDS = constrainToRangeF(attitudeData.gyDS, -SENSOR_GYRO_FLYABLE_VALUE_LIMIT, SENSOR_GYRO_FLYABLE_VALUE_LIMIT);
 	attitudeData.gzDS = constrainToRangeF(attitudeData.gzDS, -SENSOR_GYRO_FLYABLE_VALUE_LIMIT, SENSOR_GYRO_FLYABLE_VALUE_LIMIT);
+
+	//Apply Notch Filtering
+	attitudeData.gxDS = biQuadFilterUpdate(&sensorGyroXBiNtF, attitudeData.gxDS);
+	attitudeData.gyDS = biQuadFilterUpdate(&sensorGyroYBiNtF, attitudeData.gyDS);
+	attitudeData.gzDS = biQuadFilterUpdate(&sensorGyroZBiNtF, attitudeData.gzDS);
 
 	//Bi Quad LPF Filtering
 	attitudeData.gxDS = biQuadFilterUpdate(&sensorGyroXBiLpF, attitudeData.gxDS);

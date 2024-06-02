@@ -1,11 +1,10 @@
-//Common Utils etc
+#include "rcSensor.h"
 #include "fcLogger.h"
 #include "deltaTimer.h"
-#include "rcSensor.h"
 #include "pwmSensor.h"
 #include "pwmManager.h"
 #include "attitudeSensor.h"
-//Managers
+
 #include "managerConfig.h"
 #include "fcManager.h"
 
@@ -53,6 +52,7 @@ uint8_t initManagers() {
 		return 0;
 	}
 	logString("init[manager , DebugManager] > Success\n");
+
 	return 1;
 }
 
@@ -66,10 +66,12 @@ uint8_t initFlightController() {
 }
 
 uint8_t startFlightTasks() {
+
 	if (!startRCManager()) {
 		logString("init[Start , RCManager] > Failure\n");
 		return 0;
 	}
+
 	if (!startAttitudeManager()) {
 		logString("init[Start , AttitudeManager] > Failure\n");
 		return 0;
@@ -111,8 +113,25 @@ void startFlightController() {
 				if (startFlightTasks()) {
 					logString("init[FC Start] > Success\n");
 					while (1) {
-						//statusIndicatorToggle();
-						vTaskDelay(500);
+						if (fcStatusData.canFly) {
+							statusIndicatorOn();
+							vTaskDelay(100);
+						} else if (fcStatusData.hasCrashed) {
+							statusIndicatorToggle();
+							vTaskDelay(50);
+						} else if (fcStatusData.canStabilize) {
+							statusIndicatorToggle();
+							vTaskDelay(100);
+						} else if (fcStatusData.canStart) {
+							statusIndicatorToggle();
+							vTaskDelay(500);
+						} else if (!fcStatusData.canStart) {
+							statusIndicatorToggle();
+							vTaskDelay(1500);
+						} else {
+							statusIndicatorOff();
+							vTaskDelay(100);
+						}
 					}
 				} else {
 					logString("init[Flight tasks] > Failure\n");

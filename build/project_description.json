@@ -1,7 +1,7 @@
 {
     "version":            "1.1",
     "project_name":       "ESP32_FC",
-    "project_version":    "1",
+    "project_version":    "785787d-dirty",
     "project_path":       "F:/Bijesh/ESP_Workspace/ESP32_FC",
     "idf_path":           "F:/softwares/Espressif/esp-idf-v5.2.1",
     "build_dir":          "F:/Bijesh/ESP_Workspace/ESP32_FC/build",
@@ -685,7 +685,7 @@
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "file": "F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/fcDSP/libfcDSP.a",
-            "sources": [ "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP/biQuadFilter.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP/leakyIntegrationFilter.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP/lowPassFilter.c" ],
+            "sources": [ "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP/biQuadFilter.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP/ewmaFilter.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP/highPassFilter.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP/leakyIntegrationFilter.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP/lowPassFilter.c" ],
             "include_dirs": [ "include" ]
         },
         "fcDevices": {
@@ -725,12 +725,12 @@
             "dir": "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcIO",
             "type": "LIBRARY",
             "lib": "__idf_fcIO",
-            "reqs": [ "fcLogger", "driver", "fcUtil" ],
+            "reqs": [ "fcLogger", "driver", "fcUtil", "esp_wifi", "nvs_flash", "esp_http_server" ],
             "priv_reqs": [],
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "file": "F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/fcIO/libfcIO.a",
-            "sources": [ "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcIO/pwm/fcPWM.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcIO/spi/fcSPI.c" ],
+            "sources": [ "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcIO/pwm/fcPWM.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcIO/spi/fcSPI.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcIO/wifi/fcWifi.c" ],
             "include_dirs": [ "include" ]
         },
         "fcLogger": {
@@ -760,7 +760,7 @@
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "file": "F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/fcManager/libfcManager.a",
-            "sources": [ "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcManager/altitudeManager/altitudeManager.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcManager/attitudeManager/attitudeManager.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcManager/configManager/configManager.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcManager/debugManager/debugManager.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcManager/fcManager.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcManager/pwmManager/pwmManager.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcManager/rcManager/rcManager.c" ],
+            "sources": [ "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcManager/altitudeManager/altitudeManager.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcManager/attitudeManager/attitudeManager.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcManager/configManager/configManager.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcManager/debugManager/debugManager.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcManager/fcManager.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcManager/pwmManager/pwmManager.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcManager/rcManager/rcManager.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcManager/rcManager/rxRcManager.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcManager/rcManager/wifiRcManager.c" ],
             "include_dirs": [ "include" ]
         },
         "fcSensors": {
@@ -770,12 +770,12 @@
             "dir": "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors",
             "type": "LIBRARY",
             "lib": "__idf_fcSensors",
-            "reqs": [ "fcLogger", "fcTimer", "fcDevices", "fcCalibration", "fcUtil", "fcDSP" ],
+            "reqs": [ "fcLogger", "fcTimer", "fcDevices", "fcCalibration", "fcUtil", "fcDSP", "fcCommon" ],
             "priv_reqs": [],
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "file": "F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/fcSensors/libfcSensors.a",
-            "sources": [ "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/altitude/altitudeSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/attitude/attitudeSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/config/configSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/indicator/indicatorSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/pwm/pwmSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/rc/rcSensor.c" ],
+            "sources": [ "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/altitude/altitudeSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/attitude/attitudeSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/config/configSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/indicator/indicatorSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/pwm/pwmSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/rc/rxRcSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/rc/wifiRcSensor.c" ],
             "include_dirs": [ "include" ]
         },
         "fcTimer": {
@@ -2346,7 +2346,7 @@
             "prefix": "idf",
             "dir": "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcIO",
             "lib": "__idf_fcIO",
-            "reqs": [ "fcLogger", "driver", "fcUtil" ],
+            "reqs": [ "fcLogger", "driver", "fcUtil", "esp_wifi", "nvs_flash", "esp_http_server" ],
             "priv_reqs": [],
             "managed_reqs": [],
             "managed_priv_reqs": [],
@@ -2382,7 +2382,7 @@
             "prefix": "idf",
             "dir": "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors",
             "lib": "__idf_fcSensors",
-            "reqs": [ "fcLogger", "fcTimer", "fcDevices", "fcCalibration", "fcUtil", "fcDSP" ],
+            "reqs": [ "fcLogger", "fcTimer", "fcDevices", "fcCalibration", "fcUtil", "fcDSP", "fcCommon" ],
             "priv_reqs": [],
             "managed_reqs": [],
             "managed_priv_reqs": [],

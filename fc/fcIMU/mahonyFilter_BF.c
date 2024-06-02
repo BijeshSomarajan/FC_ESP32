@@ -38,7 +38,7 @@ void imuFilterUpdateAngles(void) {
  * Converts yaw to heading
  */
 void imuFilterUpdateHeading(float magIncl) {
-	imuData.heading = -imuData.yaw - 90.0f;
+	imuData.heading = -imuData.yaw ;
 	if (imuData.heading < 0.0f) {
 		imuData.heading += 360.0f;
 	} else if (imuData.heading > 360.0f) {
@@ -99,7 +99,7 @@ void imuFilterUpdate(float dt) {
 
 	// Use measured magnetic field vector
 	float recipMagNorm = power2f(mx) + power2f(my) + power2f(mz);
-	if (recipMagNorm > 0.001f) {
+	if (recipMagNorm > 0.01f) {
 		// Normalize magnetometer measurement
 #if MAHONY_BF_FILTER_BF_USE_SQRT_APPROX == 1
 		recipMagNorm = fastInvSqrtf(recipMagNorm);
@@ -125,7 +125,7 @@ void imuFilterUpdate(float dt) {
 	}
 	// Use measured acceleration vector
 	float recipAccNorm = power2f(ax) + power2f(ay) + power2f(az);
-	if (recipAccNorm > 0.001f) {
+	if (recipAccNorm > 0.01f) {
 		// Normalize accelerometer measurement
 #if MAHONY_BF_FILTER_BF_USE_SQRT_APPROX == 1
 		recipMagNorm = fastInvSqrtf(recipMagNorm);

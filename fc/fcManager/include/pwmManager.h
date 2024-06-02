@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 #define PWM_MGR_USE_TIMER 1
-#define PWM_UPDATE_PERIOD  1.0f/400.0f
+#define PWM_UPDATE_PERIOD  1.0f/2000.0f
 #define PWM_UPDATE_PERIOD_US PWM_UPDATE_PERIOD * 1000000.0f
 
 uint8_t initPWMManager(void);

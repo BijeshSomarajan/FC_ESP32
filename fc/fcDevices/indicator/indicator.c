@@ -8,6 +8,8 @@ uint8_t initIndicators() {
 	return err == ESP_OK;
 }
 
+
+
 void statusIndicatorOn() {
 	gpio_set_level(STATUS_OUTPUT_IO, 1);
 }

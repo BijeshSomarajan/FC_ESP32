@@ -1,31 +1,14 @@
-#ifndef FC_SENSOR_RC_RCSENSOR_H_
-#define FC_SENSOR_RC_RCSENSOR_H_
+#ifndef FC_FCSENSORS_INCLUDE_RCSENSOR_H_
+#define FC_FCSENSORS_INCLUDE_RCSENSOR_H_
 #include <stdio.h>
 #include <inttypes.h>
-#include "fsia.h"
 
-typedef struct _RC_DATA RC_DATA;
-struct _RC_DATA {
-	//RC stick middle values
-	int16_t RC_MID_DATA[10];
-	//RC Delta values
-	int16_t RC_DELTA_DATA[10];
-	//RC effective values
-	int16_t RC_EFFECTIVE_DATA[10];
-	//Flags to state the stick positions
-	uint8_t pitchCentered, rollCentered, yawCentered, throttleCentered ;
-	uint8_t cpu;
-	float readDt;
-	float processDt;
-};
-extern RC_DATA rcData;
+#define WIFI_RC_SENSOR_ENABLED 0
 
-//Number of RC channels
 #define RC_CHANNEL_COUNT 10
 #define RC_CHANNEL_MAX_INDEX (RC_CHANNEL_COUNT-1)
 #define RC_CHANNEL_DEAD_BAND 3
 
-//Channel Indexes , M3
 #define RC_YAW_CHANNEL_INDEX          0 // Channel 1
 #define RC_TH_CHANNEL_INDEX           1 // Channel 2
 #define RC_PITCH_CHANNEL_INDEX        2 // Channel 4
@@ -39,15 +22,33 @@ extern RC_DATA rcData;
 #define RC_HEADING_CHANNEL_INDEX     8 //Channel 9  //swc
 #define RC_LAND_CHANNEL_INDEX        9 //Channel 10 //Land
 
-#define RC_CHANNEL_MIN_VALUE FSIA_CHANNEL_MIN_VALUE
-#define RC_CHANNEL_MAX_VALUE FSIA_CHANNEL_MAX_VALUE
-#define RC_CHANNEL_MID_VALUE FSIA_CHANNEL_MID_VALUE
+#define RC_CHANNEL_MIN_VALUE 1000
+#define RC_CHANNEL_MAX_VALUE 2000
+#define RC_CHANNEL_MID_VALUE 1500
 #define RC_CHANNEL_DELTA_VALUE (RC_CHANNEL_MAX_VALUE-RC_CHANNEL_MIN_VALUE)
 
-uint8_t initRCSensors(void);
-void readRCSensors(void);
+typedef struct _RC_DATA RC_DATA;
+struct _RC_DATA {
+	//RC stick middle values
+	int16_t RC_MID_DATA[RC_CHANNEL_COUNT];
+	//RC Delta values
+	int16_t RC_DELTA_DATA[RC_CHANNEL_COUNT];
+	//RC effective values
+	int16_t RC_EFFECTIVE_DATA[RC_CHANNEL_COUNT];
+	//Flags to state the stick positions
+	uint8_t pitchCentered, rollCentered, yawCentered, throttleCentered;
+	uint8_t cpu;
+	float readDt;
+	float processDt;
+};
 
+extern RC_DATA rcData;
+
+uint8_t initRCSensors(void);
+uint8_t startRcSensors(void);
+void resetRcSensors(void);
+void readRCSensors(void);
 uint16_t getRCValue(uint8_t channel);
 void calibrateRCSensor(void);
 
-#endif /* FC_SENSOR_RC_RCSENSOR_H_ */
+#endif

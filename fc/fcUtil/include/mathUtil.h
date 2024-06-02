@@ -26,7 +26,9 @@
 float sinApprox(float x);
 float cosApprox(float x);
 float acosApprox(float x);
+
 float atan2Approx(float y, float x);
+float atanApprox(float x);
 
 double power3(double x);
 double power2(double x);

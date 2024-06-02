@@ -9,6 +9,4 @@ void controlAttitude(float dt, float expectedPitch, float expectedRoll, float ex
 
 #define ATT_CONTROL_D_RATE_LPF_FREQ 0.0f
 
-
-
 #endif

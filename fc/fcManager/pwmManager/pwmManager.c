@@ -38,10 +38,18 @@ void updatePWMTask(void *arg) {
 	int64_t currentTimeUs = getTimeUSec();
 	float dt = getUSecTimeInSec(currentTimeUs - updatePWMLastTimeUs);
 	updatePWMLastTimeUs = currentTimeUs;
-	pwmData.PWM_VALUES[0] = controlData.throttleControl + controlData.altitudeControl;
-	pwmData.PWM_VALUES[1] = controlData.throttleControl + controlData.altitudeControl;
-	pwmData.PWM_VALUES[2] = controlData.throttleControl + controlData.altitudeControl;
-	pwmData.PWM_VALUES[3] = controlData.throttleControl + controlData.altitudeControl;
+	if (!fcStatusData.canFly) {
+		pwmData.PWM_VALUES[0] = 0;
+		pwmData.PWM_VALUES[1] = 0;
+		pwmData.PWM_VALUES[2] = 0;
+		pwmData.PWM_VALUES[3] = 0;
+	} else {
+		int throttle = controlData.throttleControl + controlData.altitudeControl;
+		pwmData.PWM_VALUES[0] = throttle + controlData.pitchControl + controlData.rollControl + controlData.yawControl;
+		pwmData.PWM_VALUES[1] = throttle + controlData.pitchControl - controlData.rollControl - controlData.yawControl;
+		pwmData.PWM_VALUES[2] = throttle - controlData.pitchControl + controlData.rollControl - controlData.yawControl;
+		pwmData.PWM_VALUES[3] = throttle - controlData.pitchControl - controlData.rollControl + controlData.yawControl;
+	}
 	updatePWMValues();
 	pwmData.dt = dt;
 }
@@ -78,9 +86,12 @@ void pwmManagerTask(void *pvParameters) {
 	if (pwmManagerCreateTimers()) {
 		if (pwmManagerStartTimers()) {
 			logString("PWM Manager , Timer Start success , Task running!\n");
+			vTaskDelete(pwmMgrTaskHandle);
+			/*
 			for (;;) {
 				vTaskDelay(1);
 			}
+			*/
 		} else {
 			logString("PWM Manager , Timer Start failed , Task Exiting!\n");
 		}

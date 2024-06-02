@@ -66,9 +66,9 @@ F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/fcIO/libfcIO.a
 F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/fcDSP/libfcDSP.a
 F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/fcDevices/libfcDevices.a
 F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/fcCalibration/libfcCalibration.a
+F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/fcCommon/libfcCommon.a
 F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/fcSensors/libfcSensors.a
 F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/fcIMU/libfcIMU.a
-F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/fcCommon/libfcCommon.a
 F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/fcControl/libfcControl.a
 F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/fcManager/libfcManager.a
 F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/main/libmain.a

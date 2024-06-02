@@ -66,9 +66,9 @@ $<TARGET_FILE:__idf_fcIO>
 $<TARGET_FILE:__idf_fcDSP>
 $<TARGET_FILE:__idf_fcDevices>
 $<TARGET_FILE:__idf_fcCalibration>
+$<TARGET_FILE:__idf_fcCommon>
 $<TARGET_FILE:__idf_fcSensors>
 $<TARGET_FILE:__idf_fcIMU>
-$<TARGET_FILE:__idf_fcCommon>
 $<TARGET_FILE:__idf_fcControl>
 $<TARGET_FILE:__idf_fcManager>
 $<TARGET_FILE:__idf_main>

@@ -40,7 +40,7 @@ void setPWMChannelValue(uint8_t channel, int value) {
 
 void updatePWMValues() {
 	for (uint8_t cCount = 0; cCount < PWM_CHANNEL_COUNT; cCount++) {
-		setPWMValue(cCount, pwmData.PWM_VALUES[cCount]);
+		setPWMValue(cCount, pwmData.PWM_VALUES[cCount] < 0 ? 0 : pwmData.PWM_VALUES[cCount]);
 	}
 }
 

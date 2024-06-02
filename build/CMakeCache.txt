@@ -301,6 +301,9 @@ ESP32_FC_IS_TOP_LEVEL:STATIC=ON
 //Value Computed by CMake
 ESP32_FC_SOURCE_DIR:STATIC=F:/Bijesh/ESP_Workspace/ESP32_FC
 
+//No help, variable specified on the command line.
+ESP_PLATFORM:UNINITIALIZED=1
+
 //Generate the auto-generated files as needed
 GEN_FILES:BOOL=
 
@@ -339,6 +342,15 @@ Mbed TLS_IS_TOP_LEVEL:STATIC=OFF
 
 //Value Computed by CMake
 Mbed TLS_SOURCE_DIR:STATIC=F:/softwares/Espressif/esp-idf-v5.2.1/components/mbedtls/mbedtls
+
+//No help, variable specified on the command line.
+PYTHON:UNINITIALIZED=F:\softwares\Espressif-new\python_env\idf5.2_py3.10_env\Scripts\python.exe
+
+//No help, variable specified on the command line.
+PYTHON_DEPS_CHECKED:UNINITIALIZED=1
+
+//No help, variable specified on the command line.
+SDKCONFIG:UNINITIALIZED=sdkconfig
 
 //Allow unsafe builds. These builds ARE NOT SECURE.
 UNSAFE_BUILD:BOOL=OFF
@@ -563,7 +575,7 @@ C_COMPILER_SUPPORTS_WFORMAT_SIGNEDNESS:INTERNAL=1
 //Details about finding Git
 FIND_PACKAGE_MESSAGE_DETAILS_Git:INTERNAL=[C:/Program Files/Git/cmd/git.exe][v2.43.0.windows.1()]
 //Details about finding Python3
-FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[C:/Python310/python.exe][cfound components: Interpreter ][v3.10.2()]
+FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[F:/softwares/Espressif-new/python_env/idf5.2_py3.10_env/Scripts/python.exe][cfound components: Interpreter ][v3.10.2()]
 //ADVANCED property for variable: GIT_EXECUTABLE
 GIT_EXECUTABLE-ADVANCED:INTERNAL=1
 //Have include stddef.h
@@ -578,9 +590,8 @@ HAVE_TIME_T_SIZE:INTERNAL=TRUE
 TIME_T_SIZE:INTERNAL=8
 //CMAKE_INSTALL_PREFIX during last run
 _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX:INTERNAL=C:/Program Files (x86)/ESP32_FC
-//Path to a program.
-_Python3_EXECUTABLE:INTERNAL=C:/Python310/python.exe
+_Python3_EXECUTABLE:INTERNAL=F:/softwares/Espressif-new/python_env/idf5.2_py3.10_env/Scripts/python.exe
 //Python3 Properties
-_Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;10;2;32;;;C:\Python310\Lib;C:\Python310\Lib;C:\Python310\Lib\site-packages;C:\Python310\Lib\site-packages
-_Python3_INTERPRETER_SIGNATURE:INTERNAL=95de7faffa26eb51014e00be4f7a1bf7
+_Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;10;2;32;;;C:\Python310\Lib;C:\Python310\Lib;F:\softwares\Espressif-new\python_env\idf5.2_py3.10_env\Lib\site-packages;F:\softwares\Espressif-new\python_env\idf5.2_py3.10_env\Lib\site-packages
+_Python3_INTERPRETER_SIGNATURE:INTERNAL=876618cbe6219bf1d3a3972cd205647f
 

@@ -1,3 +1,4 @@
+#include "rcSensor.h"
 #include "attitudeManager.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -9,7 +10,6 @@
 #include "imu.h"
 #include "managerConfig.h"
 #include "fcStatus.h"
-
 #include "attitudeControl.h"
 #include "control.h"
 
@@ -21,8 +21,12 @@ int64_t readAccLastTimeUs = 0;
 int64_t readMagLastTimeUs = 0;
 int64_t readTempLastTimeUs = 0;
 int64_t updateAttitudeControlLastTimeUs = 0;
+float imuStabilizationDt = 0;
+float crashThresholdG;
+float lastThrottlePercentage = 0;
+
 uint8_t initAttitudeManager() {
-	uint8_t status = initAttitudeSensors();
+	uint8_t status = initAttitudeSensors(MOTOR_KV, BATTERY_VOLT, MOTOR_NUMBER);
 	if (!status) {
 		logString("init[sensor,attitude] > Failure\n");
 		return 0;
@@ -33,7 +37,19 @@ uint8_t initAttitudeManager() {
 		return 0;
 	}
 	logString("init[control,attitude] > Success\n");
+	crashThresholdG = getMaxValidG();
 	return 1;
+}
+
+void checkForCrash() {
+	if (!fcStatusData.hasCrashed && fcStatusData.canFly) {
+		if (fabs(attitudeData.azGRaw) >= crashThresholdG) {
+			fcStatusData.hasCrashed = 1;
+			fcStatusData.canFly = 0;
+		} else {
+			fcStatusData.hasCrashed = 0;
+		}
+	}
 }
 
 uint8_t stopAttitudeManager(void) {
@@ -41,44 +57,59 @@ uint8_t stopAttitudeManager(void) {
 	resetAttitudeControl(1);
 	return status;
 }
+
 /**
  * Aligns Imu Data to Sensor
  */
 void alignImuDataToBoard() {
 	float temp = 0;
-	temp = imuData.pitch;
-	imuData.pitch = -imuData.roll;
-	imuData.roll = -temp;
-	imuData.pitchRate = -imuData.pitchRate;
-	imuData.rollRate = -imuData.rollRate;
+	imuData.pitch = -imuData.pitch;
+	imuData.roll = -imuData.roll;
+	temp = imuData.pitchRate;
+	imuData.pitchRate = -imuData.rollRate;
+	imuData.rollRate = -temp;
 }
 
 void updateIMUTask(void *arg) {
 	int64_t currentTimeUs = getTimeUSec();
 	float dt = getUSecTimeInSec(currentTimeUs - updateIMULastTimeUs);
 	updateIMULastTimeUs = currentTimeUs;
-	if (!fcStatusData.isConfigMode) {
+	imuData.dt = dt;
+	if (fcStatusData.canStabilize && !fcStatusData.isIMUStabilized) {
+		imuStabilizationDt += dt;
+		if (imuStabilizationDt <= ATTITUDE_STABILIZATION_PERIOD) {
+			imuSetMode(1);
+			imuUpdate(dt);
+		} else {
+			imuStabilizationDt = 0;
+			fcStatusData.isIMUStabilized = 1;
+			fcStatusData.headingRef = imuData.heading;
+			imuSetMode(0);
+		}
+	} else if (fcStatusData.canFly) {
 		imuUpdate(dt);
 		alignImuDataToBoard();
-		imuData.dt = dt;
+		if (!rcData.yawCentered) {
+			fcStatusData.headingRef = imuData.heading;
+		}
 	}
 }
 
 void readMagTask(void *arg) {
-	int64_t currentTimeUs = getTimeUSec();
-	float dt = getUSecTimeInSec(currentTimeUs - readMagLastTimeUs);
-	readMagLastTimeUs = currentTimeUs;
 	if (!fcStatusData.isConfigMode) {
+		int64_t currentTimeUs = getTimeUSec();
+		float dt = getUSecTimeInSec(currentTimeUs - readMagLastTimeUs);
+		readMagLastTimeUs = currentTimeUs;
 		readMagSensor(dt);
 		attitudeData.magDt = dt;
 	}
 }
 
 void readTempTask(void *arg) {
-	int64_t currentTimeUs = getTimeUSec();
-	float dt = getUSecTimeInSec(currentTimeUs - readTempLastTimeUs);
-	readTempLastTimeUs = currentTimeUs;
 	if (!fcStatusData.isConfigMode) {
+		int64_t currentTimeUs = getTimeUSec();
+		float dt = getUSecTimeInSec(currentTimeUs - readTempLastTimeUs);
+		readTempLastTimeUs = currentTimeUs;
 		readTempSensor(dt);
 		attitudeData.tempDt = dt;
 	}
@@ -91,6 +122,7 @@ void readAccAndGyroTask(void *arg) {
 	readGyroLastTimeUs = currentTimeUs;
 	if (!fcStatusData.isConfigMode) {
 		readAccAndGyroSensor(dt);
+		checkForCrash();
 		attitudeData.gyroDt = dt;
 		attitudeData.accDt = dt;
 	}
@@ -121,22 +153,24 @@ uint8_t startAccAndGyroReadTimers() {
 	return 0;
 }
 #else
+
 void readGyroTask(void *arg) {
-	int64_t currentTimeUs = getTimeUSec();
-	float dt = getUSecTimeInSec(currentTimeUs - readGyroLastTimeUs);
-	readGyroLastTimeUs = currentTimeUs;
 	if (!fcStatusData.isConfigMode) {
+		int64_t currentTimeUs = getTimeUSec();
+		float dt = getUSecTimeInSec(currentTimeUs - readGyroLastTimeUs);
+		readGyroLastTimeUs = currentTimeUs;
 		readGyroSensor(dt);
 		attitudeData.gyroDt = dt;
 	}
 }
 
 void readAccTask(void *arg) {
-	int64_t currentTimeUs = getTimeUSec();
-	float dt = getUSecTimeInSec(currentTimeUs - readAccLastTimeUs);
-	readAccLastTimeUs = currentTimeUs;
 	if (!fcStatusData.isConfigMode) {
+		int64_t currentTimeUs = getTimeUSec();
+		float dt = getUSecTimeInSec(currentTimeUs - readAccLastTimeUs);
+		readAccLastTimeUs = currentTimeUs;
 		readAccSensor(dt);
+		checkForCrash();
 		attitudeData.accDt = dt;
 	}
 }
@@ -176,15 +210,32 @@ uint8_t startAccAndGyroReadTimers() {
 	}
 	return 0;
 }
+
 #endif
 
 void updateAttitudeControlTask(void *arg) {
 	int64_t currentTimeUs = getTimeUSec();
 	float dt = getUSecTimeInSec(currentTimeUs - updateAttitudeControlLastTimeUs);
 	updateAttitudeControlLastTimeUs = currentTimeUs;
-	if (!fcStatusData.isConfigMode) {
-		controlAttitude(dt, 0, 0, 0, 1.0f, 1.0f, 1.0f, 1.0f);
+	if (!fcStatusData.isConfigMode && fcStatusData.canFly && fcStatusData.throttlePercentage > ATTITUDE_CONTROL_MIN_TH_PERCENT) {
+		if (lastThrottlePercentage != fcStatusData.throttlePercentage) {
+			lastThrottlePercentage = fcStatusData.throttlePercentage;
+			calculateMotorNoise(fcStatusData.throttlePercentage);
+		}
+
+		float expectedPitch = (float) rcData.RC_EFFECTIVE_DATA[RC_PITCH_CHANNEL_INDEX];
+		float expectedRoll = -(float) rcData.RC_EFFECTIVE_DATA[RC_ROLL_CHANNEL_INDEX];
+		float expectedYaw = (float) rcData.RC_EFFECTIVE_DATA[RC_YAW_CHANNEL_INDEX];
+		expectedPitch = constrainToRangeF(expectedPitch, -ATT_MAX_PITCH_ROLL, ATT_MAX_PITCH_ROLL);
+		expectedRoll = constrainToRangeF(expectedRoll, -ATT_MAX_PITCH_ROLL, ATT_MAX_PITCH_ROLL);
+
+		controlAttitude(dt, expectedPitch, expectedRoll, expectedYaw, 1.0f, 1.0f, 1.0f, 1.0f);
 		controlData.altitudeControlDt = dt;
+	} else {
+		lastThrottlePercentage = fcStatusData.throttlePercentage;
+		calculateMotorNoise(fcStatusData.throttlePercentage);
+		resetAttitudeControl(1);
+
 	}
 }
 
@@ -252,7 +303,7 @@ uint8_t attitudeManagerStartTimers() {
 					if (err == ESP_OK) {
 						logString("Attitude Manager , Start Timers, Alt control Start , Success!\n");
 						status = 1;
-					}else{
+					} else {
 						logString("Attitude Manager , Start Timers, Alt control Start , Failed!\n");
 					}
 				} else {
@@ -275,9 +326,12 @@ void attitudeManagerTask(void *pvParameters) {
 	if (attitudeManagerCreateTimers()) {
 		if (attitudeManagerStartTimers()) {
 			logString("Attitude Manager , Timer Start success , Task running!\n");
-			for (;;) {
-				vTaskDelay(1);
-			}
+			/*
+			 for (;;) {
+			 vTaskDelay(1);
+			 }
+			 */
+			vTaskDelete(attitudeMgrTaskHandle);
 		} else {
 			logString("Attitude Manager , Timer Start failed , Task Exiting!\n");
 		}

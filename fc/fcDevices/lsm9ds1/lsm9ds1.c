@@ -72,6 +72,11 @@ uint8_t lsm9ds1MCheckConnection() {
 	return status;
 }
 
+float getLsm9ds1MaxValidG() {
+	return lsm9ds1.maxValidG * 0.9f;
+}
+
+
 void lsm9ds1DeriveGyroSensitivity() {
 	switch (lsm9ds1.gyroFullScale) {
 	case LSM9DS1_GYRORANGE_245DPS:
@@ -252,9 +257,7 @@ uint8_t lsm9ds1MInit(int16_t pMagFullScale) {
 	if (!status) {
 		return 0;
 	}
-
 	lsm9ds1DeriveMagSensitivity();
-
 	return status;
 }
 
@@ -309,7 +312,7 @@ void lsm9ds1ApplyMagOffsetCorrection() {
 	 lsm9ds1.mx *= lsm9ds1.offsetMx;
 	 lsm9ds1.my *= lsm9ds1.offsetMy;
 	 lsm9ds1.mz *= lsm9ds1.offsetMz;
-	 */
+	*/
 	//Apply the bias if already set
 	lsm9ds1.mx -= lsm9ds1.biasMx;
 	lsm9ds1.my -= lsm9ds1.biasMy;
@@ -329,20 +332,20 @@ void lsm9ds1ReadGyro() {
 }
 
 void lsm9ds1ReadAcc() {
-	lsm9ds1.buffer[0] = LSM9DS1_OUT_X_L_XL;
 	if (spi3Read(LSM9DS1_OUT_X_L_XL, lsm9ds1.buffer, 6, LSM9DS1_AG_DEVICE)) {
 		lsm9ds1.rawAx = (((int16_t) lsm9ds1.buffer[1]) << 8) | (lsm9ds1.buffer[0] & 0xFF);
 		lsm9ds1.rawAy = (((int16_t) lsm9ds1.buffer[3]) << 8) | (lsm9ds1.buffer[2] & 0xFF);
 		lsm9ds1.rawAz = (((int16_t) lsm9ds1.buffer[5]) << 8) | (lsm9ds1.buffer[4] & 0xFF);
 	}
 }
+
 void lsm9ds1ReadAccAndGyro() {
 	if (spi3Read(LSM9DS1_OUT_X_L_G, lsm9ds1.buffer, 12, LSM9DS1_AG_DEVICE)) {
-		lsm9ds1.rawGx = (((int16_t) lsm9ds1.buffer[1]) << 8) | (lsm9ds1.buffer[0] & 0xFF);
-		lsm9ds1.rawGy = (((int16_t) lsm9ds1.buffer[3]) << 8) | (lsm9ds1.buffer[2] & 0xFF);
-		lsm9ds1.rawGz = (((int16_t) lsm9ds1.buffer[5]) << 8) | (lsm9ds1.buffer[4] & 0xFF);
-		lsm9ds1.rawAx = (((int16_t) lsm9ds1.buffer[7]) << 8) | (lsm9ds1.buffer[6] & 0xFF);
-		lsm9ds1.rawAy = (((int16_t) lsm9ds1.buffer[9]) << 8) | (lsm9ds1.buffer[8] & 0xFF);
+		lsm9ds1.rawGx = (((int16_t) lsm9ds1.buffer[1]) << 8)  | (lsm9ds1.buffer[0] & 0xFF);
+		lsm9ds1.rawGy = (((int16_t) lsm9ds1.buffer[3]) << 8)  | (lsm9ds1.buffer[2] & 0xFF);
+		lsm9ds1.rawGz = (((int16_t) lsm9ds1.buffer[5]) << 8)  | (lsm9ds1.buffer[4] & 0xFF);
+		lsm9ds1.rawAx = (((int16_t) lsm9ds1.buffer[7]) << 8)  | (lsm9ds1.buffer[6] & 0xFF);
+		lsm9ds1.rawAy = (((int16_t) lsm9ds1.buffer[9]) << 8)  | (lsm9ds1.buffer[8] & 0xFF);
 		lsm9ds1.rawAz = (((int16_t) lsm9ds1.buffer[11]) << 8) | (lsm9ds1.buffer[10] & 0xFF);
 	}
 }

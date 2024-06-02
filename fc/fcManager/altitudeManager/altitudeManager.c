@@ -19,9 +19,14 @@ TaskHandle_t altitudeMgrTaskHandle;
 float altitudeUpdateDt = 0;
 float altMgrThAggregationDt = 0;
 float altMgrAltHoldActivationDt = 0;
+float altStabilizationDt = 0;
 
 LOWPASSFILTER altMgrThrottleControlLPF;
 LOWPASSFILTER altMgrVelocityLPF;
+
+float altMgrRateKDGain = 0;
+float altMgrKIGain = 0;
+float altMgrKPGain = 0;
 
 void aggregateThrottle(float dt);
 void manageAltitude(float dt);
@@ -38,30 +43,49 @@ uint8_t initAltitudeManager() {
 	lowPassFilterInit(&altMgrThrottleControlLPF, ALT_MGR_THROTTLE_CONTROL_LPF_FREQ);
 	lowPassFilterInit(&altMgrVelocityLPF, ALT_MGR_VERTICAL_VELOCITY_LPF_FREQ);
 	logString("init[Filters,altitude] > Success\n");
+	altMgrKPGain = ALT_MGR_CONTROL_P_GAIN_MIN;
+	altMgrKIGain = ALT_MGR_CONTROL_I_GAIN_MIN;
+	altMgrRateKDGain = ALT_MGR_CONTROL_RATE_D_GAIN_MIN;
 	initAltitudeControl();
 	logString("init[Controller,altitude] > Success\n");
 	logString("init[Manager,altitude] > Success\n");
 	return 1;
 }
 
-void stabilizeAltitude() {
-	vTaskDelay(2);
-	stabilizeAltitudeSensors();
-	altitudeData.altitudeSeaLevelHome = altitudeData.altitudeSeaLevel;
-	vTaskDelay(2);
-}
-
 #if ALTITUDE_MGR_USE_TIMER == 1
 
 int64_t altitudeUpdateLastTimeUs = 0;
 void updateAltitudeDataTask(void *pvParameters) {
-	altitudeData.cpu = xPortGetCoreID();
-	int64_t currentTimeUs = getTimeUSec();
-	float dt = getUSecTimeInSec(currentTimeUs - altitudeUpdateLastTimeUs);
-	altitudeUpdateLastTimeUs = currentTimeUs;
-	altitudeData.dt = dt;
-	readAltitudeSensors(dt);
-	manageAltitude(dt);
+	if (!fcStatusData.isConfigMode) {
+		altitudeData.cpu = xPortGetCoreID();
+		int64_t currentTimeUs = getTimeUSec();
+		float dt = getUSecTimeInSec(currentTimeUs - altitudeUpdateLastTimeUs);
+		altitudeUpdateLastTimeUs = currentTimeUs;
+		altitudeData.dt = dt;
+		readAltitudeSensors(dt);
+		if (fcStatusData.canStabilize && !fcStatusData.isAltStabilized) {
+			altStabilizationDt += dt;
+			if (altStabilizationDt > ALTITUDE_STABILIZATION_PERIOD) {
+				altStabilizationDt = 0;
+				fcStatusData.isAltStabilized = 1;
+				altitudeData.altitudeSeaLevelHome = altitudeData.altitudeSeaLevel;
+				fcStatusData.altitudeRefSeaLevel = altitudeData.altitudeSeaLevel;
+			}
+			resetAltitudeControl(1);
+			fcStatusData.throttlePercentage = 0;
+			controlData.throttleControl = 0;
+			altMgrThAggregationDt = 0;
+			lowPassFilterReset(&altMgrThrottleControlLPF);
+		} else if (fcStatusData.canFly) {
+			manageAltitude(dt);
+		} else {
+			lowPassFilterReset(&altMgrThrottleControlLPF);
+			resetAltitudeControl(1);
+			fcStatusData.throttlePercentage = 0;
+			controlData.throttleControl = 0;
+			altMgrThAggregationDt = 0;
+		}
+	}
 }
 
 const esp_timer_create_args_t altitudeUpdatePeriodicTimerArgs = { .callback = &updateAltitudeDataTask, .name = "updateAltitudeDataTask" };
@@ -92,13 +116,14 @@ uint8_t altitudeManagerStartTimers() {
 }
 
 void altitudeManagerTimerTask(void *pvParameters) {
-	stabilizeAltitude();
 	if (altitudeManagerCreateTimers()) {
 		if (altitudeManagerStartTimers()) {
 			logString("Altitude Manager , Timer Start success , Task running!\n");
-			for (;;) {
-				vTaskDelay(1);
-			}
+			vTaskDelete(altitudeMgrTaskHandle);
+			/*
+			 for (;;) {
+			 vTaskDelay(1);
+			 }*/
 		} else {
 			logString("Altitude Manager , Timer Start failed , Task Exiting!\n");
 		}
@@ -118,7 +143,6 @@ void altitudeManagerTask(void *pvParameters) {
 	int64_t prevTimeUs = getTimeUSec();
 	int64_t currentTimeUs = 0;
 	float dt = 0;
-	stabilizeAltitude();
 	logString("Altitude Manager Task, Stabilized Altitude!\n");
 	for (;;) {
 		currentTimeUs = getTimeUSec();
@@ -127,8 +151,25 @@ void altitudeManagerTask(void *pvParameters) {
 		altitudeUpdateDt += dt;
 		if (altitudeUpdateDt >= SENSOR_ALT_SAMPLE_PERIOD) {
 			readAltitudeSensors(altitudeUpdateDt);
-			manageAltitude(altitudeUpdateDt);
 			altitudeData.dt = altitudeUpdateDt;
+			if (fcStatusData.canStabilize && !fcStatusData.isAltStabilized) {
+					altStabilizationDt += altitudeUpdateDt;
+					if (altStabilizationDt > ALTITUDE_STABILIZATION_PERIOD) {
+						altStabilizationDt = 0;
+						fcStatusData.isAltStabilized = 1;
+						altitudeData.altitudeSeaLevelHome = altitudeData.altitudeSeaLevel;
+						fcStatusData.altitudeRefSeaLevel = altitudeData.altitudeSeaLevel;
+					}
+					controlData.throttleControl = 0;
+					controlData.altitudeControl = 0;
+					fcStatusData.throttlePercentage = 0;
+				} else if (fcStatusData.canFly) {
+					manageAltitude(altitudeUpdateDt);
+				}else {
+					fcStatusData.throttlePercentage = 0;
+					controlData.throttleControl = 0;
+					controlData.altitudeControl = 0;
+				}
 			altitudeUpdateDt = 0;
 		}
 		vTaskDelay(1);
@@ -160,25 +201,59 @@ void calculateAltVelocity(float dt) {
 
 void manageAltitude(float dt) {
 	calculateAltVelocity(dt);
-	if (!rcData.throttleCentered) {
+	if (!rcData.throttleCentered || fcStatusData.throttlePercentage < ALT_MGR_CONTROL_MIN_TH_PERCENT) {
+		//If Alt hold was enabled take the LPF output
+		if (fcStatusData.altitudeHoldEnabled) {
+			fcStatusData.currentThrottle = altMgrThrottleControlLPF.output;
+		}
 		aggregateThrottle(dt);
+		syncToAltCoarseValue();
+		resetAltitudeControl(1);
 		controlData.throttleControl = fcStatusData.currentThrottle;
 		fcStatusData.altitudeRefSeaLevel = altitudeData.altitudeSeaLevel;
-		resetAltitudeControl(1);
 		altMgrAltHoldActivationDt = 0;
 		fcStatusData.altitudeHoldEnabled = 0;
+		altMgrKPGain = ALT_MGR_CONTROL_P_GAIN_MIN;
+		altMgrKIGain = ALT_MGR_CONTROL_I_GAIN_MIN;
+		altMgrRateKDGain = ALT_MGR_CONTROL_RATE_D_GAIN_MIN;
 	} else {
 		if (altMgrAltHoldActivationDt <= ALT_MGR_ALT_HOLD_ACTIVATION_PERIOD) {
 			altMgrAltHoldActivationDt += dt;
+			syncToAltCoarseValue();
 			fcStatusData.altitudeRefSeaLevel = altitudeData.altitudeSeaLevel;
 			fcStatusData.altitudeHoldEnabled = 0;
+			altMgrKPGain = ALT_MGR_CONTROL_P_GAIN_MIN;
+			altMgrKIGain = ALT_MGR_CONTROL_I_GAIN_MIN;
+			altMgrRateKDGain = ALT_MGR_CONTROL_RATE_D_GAIN_MIN;
+			resetAltitudeControl(1);
 		} else {
+			if (altMgrKPGain < ALT_MGR_CONTROL_P_GAIN_MAX) {
+				altMgrKPGain += ALT_MGR_CONTROL_P_GAIN_FACTOR;
+			} else {
+				altMgrKPGain = ALT_MGR_CONTROL_P_GAIN_MAX;
+			}
+			if (altMgrKIGain < ALT_MGR_CONTROL_I_GAIN_MAX) {
+				altMgrKIGain += ALT_MGR_CONTROL_I_GAIN_FACTOR;
+			} else {
+				altMgrKIGain = ALT_MGR_CONTROL_I_GAIN_MAX;
+			}
+			if (altMgrRateKDGain < ALT_MGR_CONTROL_RATE_D_GAIN_MAX) {
+				altMgrRateKDGain += ALT_MGR_CONTROL_RATE_D_GAIN_FACTOR;
+			} else {
+				altMgrRateKDGain = ALT_MGR_CONTROL_RATE_D_GAIN_MAX;
+			}
 			fcStatusData.altitudeHoldEnabled = 1;
 		}
+		float altDelta = altitudeData.altitudeSeaLevel - fcStatusData.altitudeRefSeaLevel;
+		altDelta = constrainToRangeF(altDelta, -ALT_MGR_ALT_MAX_DISTANCE_DELTA, ALT_MGR_ALT_MAX_DISTANCE_DELTA);
+		#if ALT_MGR_ALT_DETLA_DOWN_SQRT_ENABLE == 1
+		if (altDelta > 0.0f) {
+			altDelta = sqrtf(altDelta);
+		}
+		#endif
+		controlAltitudeWithGain(dt, altDelta, 0.0f, altMgrKPGain, altMgrKIGain, 1.0f, altMgrRateKDGain);
 	}
-	float altDelta = altitudeData.altitudeSeaLevel - fcStatusData.altitudeRefSeaLevel;
-	altDelta = constrainToRangeF(altDelta, -ALT_MGR_ALT_MAX_DISTANCE_DELTA, ALT_MGR_ALT_MAX_DISTANCE_DELTA);
-	controlAltitudeWithGain(dt, altDelta, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+	lowPassFilterUpdate(&altMgrThrottleControlLPF, controlData.throttleControl + controlData.altitudeControl, dt);
 }
 
 uint8_t stopAltitudeManager() {

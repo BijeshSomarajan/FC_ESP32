@@ -4,6 +4,7 @@
 #include <inttypes.h>
 
 #define PWM_CHANNEL_COUNT  4
+#define PWM_125_ENABLED 1
 
 uint8_t initPWM(void);
 uint8_t startPWMs(void);

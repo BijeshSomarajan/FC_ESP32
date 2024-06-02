@@ -21,9 +21,10 @@ float sinApprox(float x) {
 	} else if (x < -HalfPI) {
 		x = -(HalfPI) - (HalfPI + x);
 	}
-	float x2 = power2f(x);
+	float x2 =  x * x;
 	return x + x * x2 * (sinPolyCoef3 + x2 * (sinPolyCoef5 + x2 * (sinPolyCoef7 + x2 * sinPolyCoef9)));
 }
+
 
 float cosApprox(float x) {
 	return sinApprox(x + HalfPI);
@@ -39,13 +40,13 @@ float acosApprox(float x) {
 	}
 }
 
-#define atanPolyCoef1  3.14551665884836e-07f
-#define atanPolyCoef2  0.99997356613987f
-#define atanPolyCoef3  0.14744007058297684f
-#define atanPolyCoef4  0.3099814292351353f
-#define atanPolyCoef5  0.05030176425872175f
-#define atanPolyCoef6  0.1471039133652469f
-#define atanPolyCoef7  0.6444640676891548f
+#define atan2PolyCoef1  3.14551665884836e-07f
+#define atan2PolyCoef2  0.99997356613987f
+#define atan2PolyCoef3  0.14744007058297684f
+#define atan2PolyCoef4  0.3099814292351353f
+#define atan2PolyCoef5  0.05030176425872175f
+#define atan2PolyCoef6  0.1471039133652469f
+#define atan2PolyCoef7  0.6444640676891548f
 
 float atan2Approx(float y, float x) {
 	float res, absX, absY;
@@ -57,7 +58,7 @@ float atan2Approx(float y, float x) {
 	} else {
 		res = 0.0f;
 	}
-	res = -((((atanPolyCoef5 * res - atanPolyCoef4) * res - atanPolyCoef3) * res - atanPolyCoef2) * res - atanPolyCoef1) / ((atanPolyCoef7 * res + atanPolyCoef6) * res + 1.0f);
+	res = -((((atan2PolyCoef5 * res - atan2PolyCoef4) * res - atan2PolyCoef3) * res - atan2PolyCoef2) * res - atan2PolyCoef1) / ((atan2PolyCoef7 * res + atan2PolyCoef6) * res + 1.0f);
 	if (absY > absX) {
 		res = HalfPI - res;
 	}
@@ -68,6 +69,18 @@ float atan2Approx(float y, float x) {
 		res = -res;
 	}
 	return res;
+}
+
+// Coefficients for the polynomial approximation
+const float atanPolyCoef1 = 0.9998660f;
+const float atanPolyCoef2 = -0.3302995f;
+const float atanPolyCoef3 = 0.1801410f;
+const float atanPolyCoef4 = -0.0851330f;
+const float atanPolyCoef5 = 0.0208351f;
+
+float atanApprox(float x) {
+	float x2 = x * x;
+	return x * (atanPolyCoef1 + x2 * (atanPolyCoef2 + x2 * (atanPolyCoef3 + x2 * (atanPolyCoef4 + x2 * atanPolyCoef5))));
 }
 
 int mapToRange(int inValue, int minInRange, int maxInRange, int minOutRange, int maxOutRange) {
@@ -95,9 +108,9 @@ double power2(double x) {
 double power3(double x) {
 	return x * x * x;
 }
-union  FAST_INV_DATA fastInvData;
+union FAST_INV_DATA fastInvData;
 float fastInvSqrtf(float x) {
-	fastInvData.f = x ;
+	fastInvData.f = x;
 	fastInvData.i = 0x5f3759df - (fastInvData.i >> 1);
 	fastInvData.f *= 1.5F - (x * 0.5F * fastInvData.f * fastInvData.f);
 	return fastInvData.f;

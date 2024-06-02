@@ -76,6 +76,10 @@ void resetAttitudeControl(uint8_t hard) {
 	pidResetI(&attitudePitchPID);
 	pidResetI(&attitudeRollPID);
 	pidResetI(&attitudeYawPID);
+	//Reset the master PIDs
+	pidResetI(&attitudePitchRatePID);
+	pidResetI(&attitudeRollRatePID);
+	pidResetI(&attitudeYawRatePID);
 }
 
 /************************************************************************/

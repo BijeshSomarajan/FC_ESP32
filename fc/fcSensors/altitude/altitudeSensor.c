@@ -6,8 +6,8 @@
 ALTITUDE_DATA altitudeData;
 
 #define SENSOR_ALT_BARO_ALTITUDE_GAIN  10.0f
-#define SENSOR_ALT_BARO_LPF_FREQUENCY 0.1f
 
+LOWPASSFILTER sensorAltBaroCoarseLPF;
 LOWPASSFILTER sensorAltBaroLPF;
 
 float getSacledSeaLevelAlt(void);
@@ -20,7 +20,8 @@ uint8_t initAltitudeSensors() {
 	if (bmp388Init()) {
 		status = 1;
 		logString("Sensor : BMP388 -> Initialized\n");
-		lowPassFilterInit(&sensorAltBaroLPF, SENSOR_ALT_BARO_LPF_FREQUENCY);
+		lowPassFilterInit(&sensorAltBaroCoarseLPF, SENSOR_ALT_BARO_LPF_FREQUENCY);
+		lowPassFilterInit(&sensorAltBaroLPF, SENSOR_ALT_BARO_SMOOTH_LPF_FREQUENCY);
 		logString("Sensor : BMP388 -> Filters Initialized\n");
 	} else {
 		logString("Sensor : BMP388 -> Not Initialized\n");
@@ -32,8 +33,8 @@ uint8_t initAltitudeSensors() {
  * Resets altitude sensor
  */
 void resetAltitudeSensors() {
-	altitudeData.verticalVelocity = 0;
 	altitudeData.altitudeSeaLevelHome = 0;
+	lowPassFilterReset(&sensorAltBaroCoarseLPF);
 	lowPassFilterReset(&sensorAltBaroLPF);
 	bmp388Reset();
 }
@@ -42,21 +43,16 @@ float getSacledSeaLevelAlt() {
 	return bmp388.altitude * SENSOR_ALT_BARO_ALTITUDE_GAIN;
 }
 
+void syncToAltCoarseValue(){
+	lowPassFilterResetToValue(&sensorAltBaroLPF, altitudeData.altitudeSeaLevelCoarse);
+}
 /**
  * Reads altitude sensor data
  */
 void readAltitudeSensors(float dt) {
 	bmp388ReadData();
 	altitudeData.altitudeSeaLevelRaw = getSacledSeaLevelAlt();
+	altitudeData.altitudeSeaLevelCoarse = lowPassFilterUpdate(&sensorAltBaroCoarseLPF, altitudeData.altitudeSeaLevelRaw, dt);
 	altitudeData.altitudeSeaLevel = lowPassFilterUpdate(&sensorAltBaroLPF, altitudeData.altitudeSeaLevelRaw, dt);
 }
 
-/**
- * Stabilizes altitude sensor data
- */
-void stabilizeAltitudeSensors() {
-	bmp388ReadData();
-	altitudeData.altitudeSeaLevelRaw = getSacledSeaLevelAlt();
-	altitudeData.altitudeSeaLevel = altitudeData.altitudeSeaLevelRaw;
-	lowPassFilterResetToValue(&sensorAltBaroLPF, altitudeData.altitudeSeaLevelRaw);
-}
