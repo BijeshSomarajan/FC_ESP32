@@ -160,6 +160,7 @@ void readGyroTask(void *arg) {
 		float dt = getUSecTimeInSec(currentTimeUs - readGyroLastTimeUs);
 		readGyroLastTimeUs = currentTimeUs;
 		readGyroSensor(dt);
+		checkForCrash();
 		attitudeData.gyroDt = dt;
 	}
 }

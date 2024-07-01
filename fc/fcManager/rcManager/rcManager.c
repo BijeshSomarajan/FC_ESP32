@@ -101,11 +101,10 @@ void processRCData(float rcUpdateDt) {
 	checkForFailSafe(rcUpdateDt);
 }
 
-
 /*
-**
-* Configure the stick rate PIDs
-*/
+ **
+ * Configure the stick rate PIDs
+ */
 void configureRCStickControl() {
 	rcStickThrottleGain = getScaledCalibrationValue(CALIB_PROP_RC_THROTTLE_RATE_K_ADDR);
 	rcStickPitchGain = getScaledCalibrationValue(CALIB_PROP_RC_PITCH_RATE_P_ADDR);
@@ -120,21 +119,17 @@ void checkForFailSafe(float dt) {
 	}
 }
 
-
 int16_t getThrottleChannelValue() {
 	return rcData.RC_DELTA_DATA[RC_TH_CHANNEL_INDEX];
 }
-
 
 int16_t getPitchChannelValue() {
 	return rcData.RC_DELTA_DATA[RC_PITCH_CHANNEL_INDEX];
 }
 
-
 int16_t getRollChannelValue() {
 	return rcData.RC_DELTA_DATA[RC_ROLL_CHANNEL_INDEX];;
 }
-
 
 int16_t getYawChannelValue() {
 	return rcData.RC_DELTA_DATA[RC_YAW_CHANNEL_INDEX];;
@@ -150,7 +145,6 @@ void applyRCStickEffectiveness() {
 	rcData.RC_EFFECTIVE_DATA[RC_YAW_CHANNEL_INDEX] = rcData.RC_DELTA_DATA[RC_YAW_CHANNEL_INDEX] * rcStickYawGain;
 
 }
-
 
 /************************************************************************/
 /* Get RC Stick Delta by subtracting from the stick middle values        */
@@ -176,7 +170,7 @@ void loadRCStickDelta() {
 //Checks if the throttle is stable
 /*************************************************************************/
 uint8_t isThrottleCentered() {
-	if (applyDeadBandInt16(rcData.RC_DELTA_DATA[RC_TH_CHANNEL_INDEX], THROTTLE_CENTER_DEADBAND) != 0) {
+	if (applyDeadBandInt16(0, rcData.RC_DELTA_DATA[RC_TH_CHANNEL_INDEX], THROTTLE_CENTER_DEADBAND) != 0) {
 		return 0;
 	} else {
 		return 1;
@@ -187,7 +181,7 @@ uint8_t isThrottleCentered() {
 //Checks if the yaw stick is stable
 /*************************************************************************/
 uint8_t isYawCentered() {
-	if (applyDeadBandInt16(rcData.RC_DELTA_DATA[RC_YAW_CHANNEL_INDEX], YAW_CENTER_DEADBAND) != 0) {
+	if (applyDeadBandInt16(0, rcData.RC_DELTA_DATA[RC_YAW_CHANNEL_INDEX], YAW_CENTER_DEADBAND) != 0) {
 		return 0;
 	} else {
 		return 1;
@@ -198,7 +192,7 @@ uint8_t isYawCentered() {
 //Checks if the Roll stick is stable
 /*************************************************************************/
 uint8_t isRollCentered() {
-	if (applyDeadBandInt16(rcData.RC_DELTA_DATA[RC_ROLL_CHANNEL_INDEX], ROLL_CENTER_DEADBAND) != 0) {
+	if (applyDeadBandInt16(0, rcData.RC_DELTA_DATA[RC_ROLL_CHANNEL_INDEX], ROLL_CENTER_DEADBAND) != 0) {
 		return 0;
 	} else {
 		return 1;
@@ -209,7 +203,7 @@ uint8_t isRollCentered() {
 //Checks if the Pitch stick is stable
 /*************************************************************************/
 uint8_t isPitchCentered() {
-	if (applyDeadBandInt16(rcData.RC_DELTA_DATA[RC_PITCH_CHANNEL_INDEX], PITCH_CENTER_DEADBAND) != 0) {
+	if (applyDeadBandInt16(0, rcData.RC_DELTA_DATA[RC_PITCH_CHANNEL_INDEX], PITCH_CENTER_DEADBAND) != 0) {
 		return 0;
 	} else {
 		return 1;
@@ -308,7 +302,7 @@ uint8_t canStartModel() {
  Checks if the Model can be armed, The throttle at the bottom position
  **/
 uint8_t canArmModel() {
-	if (applyDeadBandInt16(getRCValue(RC_TH_CHANNEL_INDEX) - RC_CHANNEL_MIN_VALUE, THROTTLE_CENTER_DEADBAND) == 0 && getRCValue(RC_START_CHANNEL_INDEX) == RC_CHANNEL_MAX_VALUE) {
+	if (applyDeadBandInt16(0, getRCValue(RC_TH_CHANNEL_INDEX) - RC_CHANNEL_MIN_VALUE, THROTTLE_CENTER_ARM_DEADBAND) == 0 && getRCValue(RC_START_CHANNEL_INDEX) == RC_CHANNEL_MAX_VALUE) {
 		return 1;
 	} else {
 		return 0;
@@ -320,7 +314,7 @@ uint8_t canArmModel() {
  **/
 int16_t applyStickDeadBand(int16_t rcChannelValue) {
 	if (RC_CHANNEL_DEAD_BAND != 0) {
-		return applyDeadBandInt16(rcChannelValue, RC_CHANNEL_DEAD_BAND);
+		return applyDeadBandInt16(0, rcChannelValue, RC_CHANNEL_DEAD_BAND);
 	} else {
 		return rcChannelValue;
 	}

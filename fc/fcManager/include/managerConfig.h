@@ -25,7 +25,7 @@
 
 #define RC_WIFI_MANAGER_STACK_SIZE 1024 * 6
 #define RC_WIFI_MANAGER_PRIORITY 10
-#define RC_WIFI_MANAGER_CPU 1
+#define RC_WIFI_MANAGER_CPU 1 //Wifi configured on Core 1 as per SDKConfig
 
 #define PWM_MANAGER_STACK_SIZE 1024 * 4
 #define PWM_MANAGER_PRIORITY 8

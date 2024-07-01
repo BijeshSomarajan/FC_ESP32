@@ -3,25 +3,16 @@
 #if WIFI_RC_SENSOR_ENABLED == 1
 
 #include "fcWifi.h"
+#include "fcWifiIO.h"
 #include "delayTimer.h"
 #include "deltaTimer.h"
 #include "fcLogger.h"
-
-//isOn,isLand,isRTH,th-value,pitch-value,roll-value,yaw-value
-#define WIFI_RC_DATA_IS_ON_INDEX 0
-#define WIFI_RC_DATA_IS_LAND_INDEX 1
-#define WIFI_RC_DATA_IS_RTH_INDEX 2
-#define WIFI_RC_DATA_IS_HEADLESS_INDEX 3
-#define WIFI_RC_DATA_TH_DATA_INDEX 4
-#define WIFI_RC_DATA_PITCH_DATA_INDEX 5
-#define WIFI_RC_DATA_ROLL_DATA_INDEX 6
-#define WIFI_RC_DATA_YAW_DATA_INDEX 7
 
 uint16_t wifiRcChannelValue[RC_CHANNEL_COUNT] = { 0 };
 
 extern void processRCData(float dt);
 extern void determineFCState(void);
-extern char* getWifiRCResponse(void);
+extern void getMarshalledFCState(uint8_t *outputData, uint16_t *outputLen);
 
 int64_t wifiRcDataLoadLastTimeUs = 0;
 
@@ -41,12 +32,13 @@ uint8_t initRCSensors() {
 
 uint8_t startRcSensors() {
 	resetRcSensors();
-	if (startHttpServer()) {
+	if (startUDPServer()) {
 		logString("Wifi Rc Sensor , Start Success!\n");
 	} else {
 		logString("Wifi Rc Sensor , Start Failed!\n");
 		return 0;
 	}
+
 	return 1;
 }
 
@@ -62,55 +54,60 @@ void calibrateRCSensor() {
 	//No Impl
 }
 
+/*
+ On/Off, Land, RTH, Throtte, pitch,  roll  , yaw
+ [0], [1] , [2], [3][4] , [5][6], [7][8], [9][10]
+ */
+void unMarshallWifiData(uint8_t *inputData, int inputLen) {
+	if (inputData[0] == 1) {
+		wifiRcChannelValue[RC_START_CHANNEL_INDEX] = RC_CHANNEL_MAX_VALUE;
+	} else {
+		wifiRcChannelValue[RC_START_CHANNEL_INDEX] = RC_CHANNEL_MIN_VALUE;
+	}
+	if (inputData[1] == 1) {
+		wifiRcChannelValue[RC_LAND_CHANNEL_INDEX] = RC_CHANNEL_MAX_VALUE;
+	} else {
+		wifiRcChannelValue[RC_LAND_CHANNEL_INDEX] = RC_CHANNEL_MIN_VALUE;
+	}
+	if (inputData[2] == 1) {
+		wifiRcChannelValue[RC_POS_CHANNEL_INDEX] = RC_CHANNEL_MAX_VALUE;
+	} else {
+		wifiRcChannelValue[RC_POS_CHANNEL_INDEX] = RC_CHANNEL_MIN_VALUE;
+	}
+	int16_t tempData;
+	//Throttle
+	tempData = inputData[3];
+	tempData |= (uint16_t) (inputData[4] << 8);
+	wifiRcChannelValue[RC_TH_CHANNEL_INDEX] = tempData;
+	//Pitch
+	tempData = inputData[5];
+	tempData |= (uint16_t) (inputData[6] << 8);
+	wifiRcChannelValue[RC_PITCH_CHANNEL_INDEX] = tempData;
+	//Roll
+	tempData = inputData[7];
+	tempData |= (uint16_t) (inputData[8] << 8);
+	wifiRcChannelValue[RC_ROLL_CHANNEL_INDEX] = tempData;
+	//Yaw
+	tempData = inputData[9];
+	tempData |= (uint16_t) (inputData[10] << 8);
+	wifiRcChannelValue[RC_YAW_CHANNEL_INDEX] = tempData;
 
+	/*
+	char tempDebug[100];
+	sprintf(tempDebug, "Start:%d, Land:%d, Pos:%d, Th:%d, Pitch:%d, Roll:%d, Yaw:%d\n", wifiRcChannelValue[RC_START_CHANNEL_INDEX], wifiRcChannelValue[RC_LAND_CHANNEL_INDEX], wifiRcChannelValue[RC_POS_CHANNEL_INDEX], wifiRcChannelValue[RC_TH_CHANNEL_INDEX],
+			wifiRcChannelValue[RC_PITCH_CHANNEL_INDEX], wifiRcChannelValue[RC_ROLL_CHANNEL_INDEX], wifiRcChannelValue[RC_YAW_CHANNEL_INDEX]);
+	logString(tempDebug);
+	*/
+}
 
-char* handleWifiPostData(char *data, int len) {
+void handleWifiRxData(uint8_t *inputData, int inputLen, uint8_t *outputData, uint16_t *outputLen) {
 	int64_t currentTimeUs = getTimeUSec();
 	float dt = getUSecTimeInSec(currentTimeUs - wifiRcDataLoadLastTimeUs);
-	int curIndex = 0;
-	char *token = strtok(data, ",");
-	while (token != NULL) {
-		if (curIndex == WIFI_RC_DATA_IS_ON_INDEX) {
-			if (token[0] == '1') {
-				wifiRcChannelValue[RC_START_CHANNEL_INDEX] = RC_CHANNEL_MAX_VALUE;
-			} else {
-				wifiRcChannelValue[RC_START_CHANNEL_INDEX] = RC_CHANNEL_MIN_VALUE;
-			}
-		} else if (curIndex == WIFI_RC_DATA_IS_LAND_INDEX) {
-			if (token[0] == '1') {
-				wifiRcChannelValue[RC_LAND_CHANNEL_INDEX] = RC_CHANNEL_MAX_VALUE;
-			} else {
-				wifiRcChannelValue[RC_LAND_CHANNEL_INDEX] = RC_CHANNEL_MIN_VALUE;
-			}
-		} else if (curIndex == WIFI_RC_DATA_IS_RTH_INDEX) {
-			if (token[0] == '1') {
-				wifiRcChannelValue[RC_POS_CHANNEL_INDEX] = RC_CHANNEL_MAX_VALUE;
-			} else {
-				wifiRcChannelValue[RC_POS_CHANNEL_INDEX] = RC_CHANNEL_MIN_VALUE;
-			}
-		} else if (curIndex == WIFI_RC_DATA_IS_HEADLESS_INDEX) {
-			if (token[0] == '1') {
-				wifiRcChannelValue[RC_HEADING_CHANNEL_INDEX] = RC_CHANNEL_MAX_VALUE;
-			} else {
-				wifiRcChannelValue[RC_HEADING_CHANNEL_INDEX] = RC_CHANNEL_MIN_VALUE;
-			}
-		} else if (curIndex == WIFI_RC_DATA_TH_DATA_INDEX) {
-			wifiRcChannelValue[RC_TH_CHANNEL_INDEX] = atoi(token);
-		} else if (curIndex == WIFI_RC_DATA_PITCH_DATA_INDEX) {
-			wifiRcChannelValue[RC_PITCH_CHANNEL_INDEX] = atoi(token);
-		} else if (curIndex == WIFI_RC_DATA_ROLL_DATA_INDEX) {
-			wifiRcChannelValue[RC_ROLL_CHANNEL_INDEX] = atoi(token);
-		} else if (curIndex == WIFI_RC_DATA_YAW_DATA_INDEX) {
-			wifiRcChannelValue[RC_YAW_CHANNEL_INDEX] = atoi(token);
-		} else {
-			break;
-		}
-		token = strtok(NULL, ",");
-		curIndex++;
-	}
+	wifiRcDataLoadLastTimeUs = currentTimeUs;
+	unMarshallWifiData(inputData, inputLen);
 	processRCData(dt);
 	determineFCState();
-	return getWifiRCResponse();;
+	getMarshalledFCState(outputData, outputLen);
 }
 
 #endif

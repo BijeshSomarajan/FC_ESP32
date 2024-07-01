@@ -5,28 +5,22 @@
 #define FC_WIFI_FAIL_BIT      BIT1
 
 /*STA Settings */
-#define FC_ESP_WIFI_STA_SSID    "brhs_fc"  // "Bijesh somarajan"
-#define FC_ESP_WIFI_STA_PASSWD   "nilambur" //"nilambur"
-#define FC_ESP_WIFI_STA_MAXIMUM_RETRY     3
-#define FC_ESP_WIFI_STA_CONN_TIMEOUT  20
+#define FC_ESP_WIFI_STA_SSID    "brhs-wifi"
+#define FC_ESP_WIFI_STA_PASSWD  "passw0rd"
+#define FC_ESP_WIFI_STA_MAXIMUM_RETRY     5
+#define FC_ESP_WIFI_STA_CONN_TIMEOUT  200
 
 /* AP Settings */
-#define FC_ESP_WIFI_AP_SSID     "brhs_fc"
-#define FC_ESP_WIFI_AP_PASSWD   "nilambur"
-#define FC_ESP_WIFI_AP_MAX_STA_CON    10
+#define FC_ESP_WIFI_AP_SSID     "brhs-wifi"
+#define FC_ESP_WIFI_AP_PASSWD   "passw0rd"
+#define FC_ESP_WIFI_AP_MAX_STA_CON    1
 #define FC_ESP_WIFI_AP_CHANNEL 1
-#define FC_ESP_WIFI_AP_CONN_TIMEOUT  100
+#define FC_ESP_WIFI_AP_CONN_TIMEOUT  200
 
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t wifi_event_group;
-static httpd_handle_t httpServer = NULL;
 
 char wifiDebugBuf[256];
-#define WIFI_MAX_DATA_REQUEST_SIZE 128
-uint8_t wifiRequestUnderProccess = 0;
-
-static char wifiRequestBuffer[WIFI_MAX_DATA_REQUEST_SIZE];
-extern char* handleWifiPostData(char *data, int len);
 
 static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
 	if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
@@ -61,6 +55,7 @@ static uint8_t initialise_wifi(void) {
 
 	esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
 	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+	//cfg.ampdu_rx_enable = 0; //Generally, the AMPDU should be enabled. Disabling AMPDU is usually for debugging purposes.
 
 	err = esp_wifi_init(&cfg);
 	if (err == ESP_OK) {
@@ -241,9 +236,9 @@ uint8_t wifi_ap(void) {
 	}
 
 	esp_netif_ip_info_t ip_info;
-	IP4_ADDR(&ip_info.ip, 10, 34, 46, 5);
-	IP4_ADDR(&ip_info.gw, 10, 34, 46, 1);
-	IP4_ADDR(&ip_info.netmask, 255, 0, 0, 0);
+	IP4_ADDR(&ip_info.ip, 192, 168, 4, 1);
+	IP4_ADDR(&ip_info.gw, 192, 168, 1, 1);
+	IP4_ADDR(&ip_info.netmask, 255, 255, 0, 0);
 
 	err = esp_netif_set_ip_info(ap_netif, &ip_info);
 	if (err == ESP_OK) {
@@ -317,78 +312,7 @@ uint8_t initWifi() {
 	return 1;
 }
 
-esp_err_t post_handler(httpd_req_t *req) {
-	char *respose = NULL;
-	if (!wifiRequestUnderProccess) {
-		wifiRequestUnderProccess = 1;
-		httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "null");
-		httpd_resp_set_hdr(req, "Access-Control-Allow-Methods", "POST");
-		if (req->content_len <= WIFI_MAX_DATA_REQUEST_SIZE) {
-			int ret, remaining = req->content_len;
-			while (remaining > 0) {
-				if ((ret = httpd_req_recv(req, wifiRequestBuffer, MIN(remaining, sizeof(wifiRequestBuffer)))) <= 0) {
-					if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
-						continue;
-					}
-				}
-				remaining -= ret;
-			}
-			wifiRequestBuffer[req->content_len] = '\0';
-			respose = handleWifiPostData(wifiRequestBuffer, req->content_len);
-			httpd_resp_set_status(req, "200");
-		} else {
-			httpd_resp_set_status(req, "400");
-		}
-		if (respose != NULL) {
-			httpd_resp_send(req, respose, strlen(respose));
-		} else {
-			httpd_resp_send(req, "", 0);
-		}
-	} else {
-		httpd_resp_set_status(req, "503");
-		httpd_resp_send(req, "", 0);
-	}
-	wifiRequestUnderProccess = 0;
-	return ESP_OK;
-}
 
-uint8_t startHttpServer() {
-	httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-	config.server_port = 8001;
-	config.lru_purge_enable = true;
-	config.task_priority = 12;
-	config.max_open_sockets  = 7;
-	config.max_uri_handlers  = 3;
-	config.max_resp_headers  = 4;
-	config.stack_size = 4096 * 2;
 
-	//config.enable_so_linger = true;
-	//config.linger_timeout = 0;
 
-	config.keep_alive_enable = true;
-	config.keep_alive_idle = 10;
-	config.keep_alive_interval = 10;
-	config.keep_alive_count = 10;
 
-	config.recv_wait_timeout  = 50;
-	config.send_wait_timeout  = 50;
-
-	esp_err_t err = httpd_start(&httpServer, &config);
-	if (err == ESP_OK) {
-		logString("WebServer : httpd_start , Success\n");
-	} else {
-		logString("WebServer : httpd_start , Failed\n");
-		return 0;
-	}
-
-	httpd_uri_t postHandler = { .uri = "/rcData.json", .method = HTTP_POST, .handler = post_handler, .user_ctx = NULL };
-	err = httpd_register_uri_handler(httpServer, &postHandler);
-	if (err == ESP_OK) {
-		logString("WebServer : POST Handler , Success\n");
-	} else {
-		logString("WebServer : POST Handler  , Failed\n");
-		return 0;
-	}
-
-	return 1;
-}

@@ -1,23 +1,70 @@
--- git rev-parse returned 'fatal: detected dubious ownership in repository at 'F:/softwares/Espressif/esp-idf-v5.2.1'
-'F:/softwares/Espressif/esp-idf-v5.2.1' is on a file system that does not record ownership
-To add an exception for this directory, call:
+[1/5] cmd.exe /C "cd /D F:\Bijesh\ESP_Workspace\ESP32_FC\build\esp-idf\esptool_py && F:\softwares\Espressif-new\python_env\idf5.2_py3.10_env\Scripts\python.exe F:/softwares/Espressif/esp-idf-v5.2.1/components/partition_table/check_sizes.py --offset 0x8000 partition --type app F:/Bijesh/ESP_Workspace/ESP32_FC/build/partition_table/partition-table.bin F:/Bijesh/ESP_Workspace/ESP32_FC/build/ESP32_FC.bin"
+ESP32_FC.bin binary size 0xc10c0 bytes. Smallest app partition is 0x100000 bytes. 0x3ef40 bytes (25%) free.
+[2/5] Performing build step for 'bootloader'
+[1/1] cmd.exe /C "cd /D F:\Bijesh\ESP_Workspace\ESP32_FC\build\bootloader\esp-idf\esptool_py && F:\softwares\Espressif-new\python_env\idf5.2_py3.10_env\Scripts\python.exe F:/softwares/Espressif/esp-idf-v5.2.1/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x1000 F:/Bijesh/ESP_Workspace/ESP32_FC/build/bootloader/bootloader.bin"
+Bootloader binary size 0x6150 bytes. 0xeb0 bytes (13%) free.
+[2/3] cmd.exe /C "cd /D F:\softwares\Espressif\esp-idf-v5.2.1\components\esptool_py && F:\softwares\Espressif-new\tools\cmake\3.24.0\bin\cmake.exe -D IDF_PATH=F:/softwares/Espressif/esp-idf-v5.2.1 -D SERIAL_TOOL=F:/softwares/Espressif-new/python_env/idf5.2_py3.10_env/Scripts/python.exe;;F:/softwares/Espressif/esp-idf-v5.2.1/components/esptool_py/esptool/esptool.py;--chip;esp32 -D SERIAL_TOOL_ARGS=--before=default_reset;--after=hard_reset;write_flash;@flash_args -D WORKING_DIRECTORY=F:/Bijesh/ESP_Workspace/ESP32_FC/build -P F:/softwares/Espressif/esp-idf-v5esptool.py --chip esp32 -p COM7 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 80m --flash_size 4MB 0x1000 bootloader/bootloader.bin 0x10000 ESP32_FC.bin 0x8000 partition_table/partition-table.bin
+esptool.py v4.7.0
+Serial port COM7
+Connecting...................
+Chip is ESP32-D0WDQ6 (revision v1.0)
+Features: WiFi, BT, Dual Core, 240MHz, VRef calibration in efuse, Coding Scheme None
+Crystal is 40MHz
+MAC: 7c:9e:bd:ed:a3:e8
+Uploading stub...
+Running stub...
+Stub running...
+Changing baud rate to 460800
+Changed.
+Configuring flash size...
+Flash will be erased from 0x00001000 to 0x00007fff...
+Flash will be erased from 0x00010000 to 0x000d1fff...
+Flash will be erased from 0x00008000 to 0x00008fff...
+Compressed 24912 bytes to 15372...
+Writing at 0x00001000... (100 %)
+Wrote 24912 bytes (15372 compressed) at 0x00001000 in 0.8 seconds (effective 239.8 kbit/s)...
+Hash of data verified.
+Compressed 790720 bytes to 524569...
+Writing at 0x00010000... (3 %)
+Writing at 0x0001d031... (6 %)
+Writing at 0x00022e1c... (9 %)
+Writing at 0x00028c06... (12 %)
+Writing at 0x000330e1... (15 %)
+Writing at 0x00038850... (18 %)
+Writing at 0x0003e1a8... (21 %)
+Writing at 0x0004391f... (24 %)
+Writing at 0x00048e8d... (27 %)
+Writing at 0x0004e1f2... (30 %)
+Writing at 0x00053585... (33 %)
+Writing at 0x000587a2... (36 %)
+Writing at 0x0005dce9... (39 %)
+Writing at 0x00062f74... (42 %)
+Writing at 0x000686d6... (45 %)
+Writing at 0x0006dd9f... (48 %)
+Writing at 0x00073796... (51 %)
+Writing at 0x00078bfd... (54 %)
+Writing at 0x0007dfb0... (57 %)
+Writing at 0x000831c0... (60 %)
+Writing at 0x000883d9... (63 %)
+Writing at 0x0008d45f... (66 %)
+Writing at 0x00092675... (69 %)
+Writing at 0x00097dd2... (72 %)
+Writing at 0x0009d4ef... (75 %)
+Writing at 0x000a2cc0... (78 %)
+Writing at 0x000accef... (81 %)
+Writing at 0x000b3ddd... (84 %)
+Writing at 0x000ba832... (87 %)
+Writing at 0x000c0411... (90 %)
+Writing at 0x000c5d0a... (93 %)
+Writing at 0x000cb89c... (96 %)
+Writing at 0x000d0f61... (100 %)
+Wrote 790720 bytes (524569 compressed) at 0x00010000 in 12.1 seconds (effective 523.7 kbit/s)...
+Hash of data verified.
+Compressed 3072 bytes to 103...
+Writing at 0x00008000... (100 %)
+Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.1 seconds (effective 340.5 kbit/s)...
+Hash of data verified.
 
-	git config --global --add safe.directory F:/softwares/Espressif/esp-idf-v5.2.1'
--- Building ESP-IDF components for target esp32
--- Project sdkconfig file F:/Bijesh/ESP_Workspace/ESP32_FC/sdkconfig
--- Compiler supported targets: xtensa-esp-elf
--- App "ESP32_FC" version: 785787d-dirty
--- Adding linker script F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/esp_system/ld/memory.ld
--- Adding linker script F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_system/ld/esp32/sections.ld.in
--- Adding linker script F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_rom/esp32/ld/esp32.rom.ld
--- Adding linker script F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_rom/esp32/ld/esp32.rom.api.ld
--- Adding linker script F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_rom/esp32/ld/esp32.rom.libgcc.ld
--- Adding linker script F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_rom/esp32/ld/esp32.rom.newlib-data.ld
--- Adding linker script F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_rom/esp32/ld/esp32.rom.syscalls.ld
--- Adding linker script F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_rom/esp32/ld/esp32.rom.newlib-funcs.ld
--- Adding linker script F:/softwares/Espressif/esp-idf-v5.2.1/components/soc/esp32/ld/esp32.peripherals.ld
--- Components: app_trace app_update bootloader bootloader_support bt cmock console cxx driver efuse esp-tls esp_adc esp_app_format esp_bootloader_format esp_coex esp_common esp_eth esp_event esp_gdbstub esp_hid esp_http_server esp_https_server esp_hw_support esp_lcd esp_local_ctrl esp_mm esp_netif esp_netif_stack esp_partition esp_phy esp_pm esp_psram esp_ringbuf esp_rom esp_system esp_timer esp_wifi espcoredump esptool_py fatfs fcCalibration fcCommon fcControl fcDSP fcDevices fcIMU fcIO fcLogger fcManager fcSensors fcTimer fcUART fcUtil freertos hal heap http_parser idf_test ieee802154 json log lwip main mbedtls mqtt newlib nvs_flash nvs_sec_provider openthread partition_table perfmon protobuf-c protocomm pthread sdmmc soc spi_flash spiffs tcp_transport ulp unity usb vfs wear_levelling wpa_supplicant xtensa
--- Component paths: F:/softwares/Espressif/esp-idf-v5.2.1/components/app_trace F:/softwares/Espressif/esp-idf-v5.2.1/components/app_update F:/softwares/Espressif/esp-idf-v5.2.1/components/bootloader F:/softwares/Espressif/esp-idf-v5.2.1/components/bootloader_support F:/softwares/Espressif/esp-idf-v5.2.1/components/bt F:/softwares/Espressif/esp-idf-v5.2.1/components/cmock F:/softwares/Espressif/esp-idf-v5.2.1/components/console F:/softwares/Espressif/esp-idf-v5.2.1/components/cxx F:/softwares/Espressif/esp-idf-v5.2.1/components/driver F:/softwares/Espressif/esp-idf-v5.2.1/components/efuse F:/softwares/Espressif/esp-idf-v5.2.1/components/esp-tls F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_adc F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_app_format F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_bootloader_format F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_coex F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_common F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_eth F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_event F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_gdbstub F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_hid F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_http_server F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_https_server F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_hw_support F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_lcd F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_local_ctrl F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_mm F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_netif F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_netif_stack F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_partition F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_phy F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_pm F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_psram F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_ringbuf F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_rom F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_system F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_timer F:/softwares/Espressif/esp-idf-v5.2.1/components/esp_wifi F:/softwares/Espressif/esp-idf-v5.2.1/components/espcoredump F:/softwares/Espressif/esp-idf-v5.2.1/components/esptool_py F:/softwares/Espressif/esp-idf-v5.2.1/components/fatfs F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcCalibration F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcCommon F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcControl F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDevices F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcIMU F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcIO F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcLogger F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcManager F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcTimer F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcUART F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcUtil F:/softwares/Espressif/esp-idf-v5.2.1/components/freertos F:/softwares/Espressif/esp-idf-v5.2.1/components/hal F:/softwares/Espressif/esp-idf-v5.2.1/components/heap F:/softwares/Espressif/esp-idf-v5.2.1/components/http_parser F:/softwares/Espressif/esp-idf-v5.2.1/components/idf_test F:/softwares/Espressif/esp-idf-v5.2.1/components/ieee802154 F:/softwares/Espressif/esp-idf-v5.2.1/components/json F:/softwares/Espressif/esp-idf-v5.2.1/components/log F:/softwares/Espressif/esp-idf-v5.2.1/components/lwip F:/Bijesh/ESP_Workspace/ESP32_FC/main F:/softwares/Espressif/esp-idf-v5.2.1/components/mbedtls F:/softwares/Espressif/esp-idf-v5.2.1/components/mqtt F:/softwares/Espressif/esp-idf-v5.2.1/components/newlib F:/softwares/Espressif/esp-idf-v5.2.1/components/nvs_flash F:/softwares/Espressif/esp-idf-v5.2.1/components/nvs_sec_provider F:/softwares/Espressif/esp-idf-v5.2.1/components/openthread F:/softwares/Espressif/esp-idf-v5.2.1/components/partition_table F:/softwares/Espressif/esp-idf-v5.2.1/components/perfmon F:/softwares/Espressif/esp-idf-v5.2.1/components/protobuf-c F:/softwares/Espressif/esp-idf-v5.2.1/components/protocomm F:/softwares/Espressif/esp-idf-v5.2.1/components/pthread F:/softwares/Espressif/esp-idf-v5.2.1/components/sdmmc F:/softwares/Espressif/esp-idf-v5.2.1/components/soc F:/softwares/Espressif/esp-idf-v5.2.1/components/spi_flash F:/softwares/Espressif/esp-idf-v5.2.1/components/spiffs F:/softwares/Espressif/esp-idf-v5.2.1/components/tcp_transport F:/softwares/Espressif/esp-idf-v5.2.1/components/ulp F:/softwares/Espressif/esp-idf-v5.2.1/components/unity F:/softwares/Espressif/esp-idf-v5.2.1/components/usb F:/softwares/Espressif/esp-idf-v5.2.1/components/vfs F:/softwares/Espressif/esp-idf-v5.2.1/components/wear_levelling F:/softwares/Espressif/esp-idf-v5.2.1/components/wpa_supplicant F:/softwares/Espressif/esp-idf-v5.2.1/components/xtensa
--- Configuring done
--- Generating done
--- Build files have been written to: F:/Bijesh/ESP_Workspace/ESP32_FC/build
+Leaving...
+Hard resetting via RTS pin...
+.2.1/components/esptool_py/run_serial_tool.cmake"

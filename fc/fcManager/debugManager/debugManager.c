@@ -31,19 +31,17 @@ void debugTime() {
 }
 
 void debugImu() {
-	DEBUG_DATA_BUFFER[0] = imuData.pitchRate * 10;
-	DEBUG_DATA_BUFFER[1] = imuData.rollRate * 10;
-	DEBUG_DATA_BUFFER[2] = imuData.yawRate * 10;
-
-	DEBUG_DATA_BUFFER[3] = imuData.pitch * 10;
-	DEBUG_DATA_BUFFER[4] = imuData.roll * 10;
-	DEBUG_DATA_BUFFER[5] = imuData.heading;
-
-	DEBUG_DATA_BUFFER[6] = imuData.linVz * 100;
-	DEBUG_DATA_BUFFER[7] = 1.0f / imuData.dt;
-
+	DEBUG_DATA_BUFFER[0] = imuData.pitch * 10;
+	DEBUG_DATA_BUFFER[1] = imuData.roll * 10;
+	DEBUG_DATA_BUFFER[2] = imuData.heading;
+	DEBUG_DATA_BUFFER[3] = imuData.linVz * 1000;
+	DEBUG_DATA_BUFFER[4] = (1.0f / imuData.dt)/10.0f;
+	DEBUG_DATA_BUFFER[5] = (1.0f / attitudeData.gyroDt)/10.0f;
+	DEBUG_DATA_BUFFER[6] =  fcStatusData.hasCrashed * 1000;
+	DEBUG_DATA_BUFFER[7] =  fcStatusData.canFly*1000;
 	sendConfigData(DEBUG_DATA_BUFFER, 8, CMD_FC_DATA);
 }
+
 extern float currentGyroNoiseFrequency;
 extern float currentAccNoiseFrequency;
 
@@ -55,26 +53,31 @@ void debugAttitude() {
 	 DEBUG_DATA_BUFFER[3] = 1.0f / attitudeData.gyroDt;
 	 DEBUG_DATA_BUFFER[4] = 1.0f / attitudeData.accDt;
 	 */
-	DEBUG_DATA_BUFFER[0] = imuData.pitch * 10;
-	DEBUG_DATA_BUFFER[1] = imuData.roll * 10;
-	DEBUG_DATA_BUFFER[2] = imuData.pitchRate * 10;
-	DEBUG_DATA_BUFFER[3] = imuData.rollRate * 10;
-	DEBUG_DATA_BUFFER[4] = imuData.linAzGRaw * 1000;
-	DEBUG_DATA_BUFFER[5] = imuData.linVz * 1000;
-	DEBUG_DATA_BUFFER[6] = 1.0f / (100 * imuData.dt);
+	DEBUG_DATA_BUFFER[0] = 1.0f / (10 * attitudeData.accDt);
+	DEBUG_DATA_BUFFER[1] = 1.0f / (10 * attitudeData.gyroDt);
+	DEBUG_DATA_BUFFER[2] = 1.0f / (10 * imuData.dt);
+	DEBUG_DATA_BUFFER[3] = imuData.pitch * 10;
+	DEBUG_DATA_BUFFER[4] = imuData.roll * 10;
+	DEBUG_DATA_BUFFER[5] = imuData.heading;
+
+	DEBUG_DATA_BUFFER[6] = imuData.rollRate * 10;
+	DEBUG_DATA_BUFFER[7] = imuData.pitchRate * 10;
 	sendConfigData(DEBUG_DATA_BUFFER, 8, CMD_FC_DATA);
 }
 
 void debugRC() {
 	DEBUG_DATA_BUFFER[0] = fcStatusData.canStart * 10;
-	DEBUG_DATA_BUFFER[5] = fcStatusData.canFly * 10;
-	DEBUG_DATA_BUFFER[2] = fcStatusData.canStabilize * 10;
-	DEBUG_DATA_BUFFER[2] = rcData.RC_DELTA_DATA[RC_TH_CHANNEL_INDEX];
-	DEBUG_DATA_BUFFER[3] = rcData.RC_DELTA_DATA[RC_PITCH_CHANNEL_INDEX];
-	DEBUG_DATA_BUFFER[4] = rcData.RC_DELTA_DATA[RC_ROLL_CHANNEL_INDEX];
-	DEBUG_DATA_BUFFER[5] = rcData.RC_DELTA_DATA[RC_YAW_CHANNEL_INDEX];
+	DEBUG_DATA_BUFFER[1] = fcStatusData.canStabilize * 10;
+	DEBUG_DATA_BUFFER[2] = fcStatusData.canFly * 10;
+	DEBUG_DATA_BUFFER[3] = rcData.throttleCentered * 10;
+	DEBUG_DATA_BUFFER[4] = fcStatusData.altitudeHoldEnabled * 10;
+	DEBUG_DATA_BUFFER[5] = fcStatusData.currentThrottle;
+	DEBUG_DATA_BUFFER[6] = rcData.RC_DELTA_DATA[RC_TH_CHANNEL_INDEX];
+	DEBUG_DATA_BUFFER[7] = rcData.RC_EFFECTIVE_DATA[RC_TH_CHANNEL_INDEX];
+	/*
 	DEBUG_DATA_BUFFER[6] = 1.0f / rcData.processDt;
 	DEBUG_DATA_BUFFER[7] = 1.0f / imuData.dt;
+	*/
 	sendConfigData(DEBUG_DATA_BUFFER, 8, CMD_FC_DATA);
 }
 
@@ -92,20 +95,20 @@ void debugFCStatus() {
 
 extern LOWPASSFILTER altMgrThrottleControlLPF;
 void debugAltitude() {
-	DEBUG_DATA_BUFFER[0] = (altitudeData.altitudeSeaLevelCoarse - altitudeData.altitudeSeaLevelHome) *10;
-	DEBUG_DATA_BUFFER[1] = (altitudeData.altitudeSeaLevel - altitudeData.altitudeSeaLevelHome) *10;
+	DEBUG_DATA_BUFFER[0] = (altitudeData.altitudeSeaLevelCoarse - altitudeData.altitudeSeaLevelHome) * 10;
+	DEBUG_DATA_BUFFER[1] = (altitudeData.altitudeSeaLevel - altitudeData.altitudeSeaLevelHome) * 10;
 	DEBUG_DATA_BUFFER[2] = altitudeData.verticalVelocity * 100;
 	DEBUG_DATA_BUFFER[3] = imuData.linVz * 1000;
 	DEBUG_DATA_BUFFER[4] = controlData.altitudeControl * 10;
-	DEBUG_DATA_BUFFER[5] = (controlData.altitudeControl+controlData.throttleControl) * 10;
+	DEBUG_DATA_BUFFER[5] = (controlData.altitudeControl + controlData.throttleControl) * 10;
 	DEBUG_DATA_BUFFER[6] = altMgrThrottleControlLPF.output * 10;
-	DEBUG_DATA_BUFFER[7] = fcStatusData.throttlePercentage *10;
+	DEBUG_DATA_BUFFER[7] = fcStatusData.throttlePercentage * 10;
 	sendConfigData(DEBUG_DATA_BUFFER, 8, CMD_FC_DATA);
 }
 
 void doFcDebug(float dt) {
-	debugAltitude();
-	//debugAttitude();
+	//debugAltitude();
+	debugAttitude();
 	//debugRC();
 	//debugTime();
 	//debugImu();

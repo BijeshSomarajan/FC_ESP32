@@ -79,12 +79,11 @@ float convertDegToRad(float deg);
 float convertPixelToCm(float pixs);
 float convertPixelToMts(float pixs);
 
-int16_t applyDeadBandInt16(int16_t value, int16_t boundary);
-float applyDeadBandFloat(float value, float boundary);
+int16_t applyDeadBandInt16(int16_t neutralValue, int16_t value, int16_t boundary);
+float applyDeadBandFloat(float neutralValue, float value, float boundary);
+double applyDeadBandDouble(double neutralValue, double value, double boundary);
 float applyHigherDeadBandFloat(float value, float boundary);
 float applyLowerDeadBandFloat(float value, float boundary);
-
-double applyDeadBandDouble(double value, double boundary);
 
 void reverseString(char *str, int len);
 int convertIntToString(int x, char str[], int d);

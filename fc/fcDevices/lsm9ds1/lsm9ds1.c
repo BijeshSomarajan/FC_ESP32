@@ -73,7 +73,7 @@ uint8_t lsm9ds1MCheckConnection() {
 }
 
 float getLsm9ds1MaxValidG() {
-	return lsm9ds1.maxValidG * 0.9f;
+	return lsm9ds1.maxValidG * 0.85f;
 }
 
 

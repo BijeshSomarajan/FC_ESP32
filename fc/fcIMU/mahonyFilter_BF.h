@@ -8,7 +8,7 @@
 
 #define MAHONY_BF_FILTER_BF_FLOOR_ANGLES 0
 //Higher value means less reliability on gyro
-#define MAHONY_BF_FILTER_KP  0.225f//0.25f  //100.7f; //0.155f; //0.175f; //0.225 //0.125f; //0.235
+#define MAHONY_BF_FILTER_KP  0.25f//0.25f  //100.7f; //0.155f; //0.175f; //0.225 //0.125f; //0.235
 #define MAHONY_BF_FILTER_KI  0.0f
 #define MAHONY_BF_FILTER_STABILIZE_KP  MAHONY_BF_FILTER_KP * 10.0f //1.75
 #define MAHONY_BF_FILTER_STABILIZE_KI  MAHONY_BF_FILTER_KI * 10.0f

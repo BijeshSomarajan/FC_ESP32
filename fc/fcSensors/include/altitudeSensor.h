@@ -20,8 +20,8 @@ extern ALTITUDE_DATA altitudeData;
 
 #define SENSOR_ALT_SAMPLE_PERIOD BMP388_SAMPLE_PRRIOD
 
-#define SENSOR_ALT_BARO_LPF_FREQUENCY 2.0f
-#define SENSOR_ALT_BARO_SMOOTH_LPF_FREQUENCY 0.2f
+#define SENSOR_ALT_BARO_LPF_FREQUENCY 4.0f
+#define SENSOR_ALT_BARO_SMOOTH_LPF_FREQUENCY 0.25f
 
 uint8_t initAltitudeSensors(void);
 void resetAltitudeSensors(void);

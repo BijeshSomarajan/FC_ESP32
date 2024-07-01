@@ -21,10 +21,9 @@ float sinApprox(float x) {
 	} else if (x < -HalfPI) {
 		x = -(HalfPI) - (HalfPI + x);
 	}
-	float x2 =  x * x;
+	float x2 = x * x;
 	return x + x * x2 * (sinPolyCoef3 + x2 * (sinPolyCoef5 + x2 * (sinPolyCoef7 + x2 * sinPolyCoef9)));
 }
-
 
 float cosApprox(float x) {
 	return sinApprox(x + HalfPI);
@@ -154,7 +153,7 @@ float convertDegToRad(float deg) {
 
 //Handles bit shifting of -ve numbers
 int16_t shiftBitsRight(int16_t value, int16_t nBits) {
-	int16_t newValue = (int16_t) (value >> nBits);
+	int16_t newValue = (int16_t)(value >> nBits);
 	if (newValue < 0) {
 		newValue++;
 	}
@@ -172,7 +171,7 @@ int16_t shiftBitsLeft(int16_t value, int16_t nBits) {
 
 //Handles bit shifting of -ve numbers
 int32_t shiftBitsRight32(int32_t value, int32_t nBits) {
-	int32_t newValue = (int32_t) (value >> nBits);
+	int32_t newValue = (int32_t)(value >> nBits);
 	if (newValue < 0) {
 		newValue++;
 	}
@@ -261,7 +260,7 @@ uint8_t isInRangeF(float rawValue, float minValue, float maxValue) {
 /*Convert 2`s complement bytes to 16 bit integer                        */
 /************************************************************************/
 int16_t convert2CBytesToInt16(char msb, char lsb) {
-	int16_t outPut = (int16_t) (((int16_t) msb << 8) | lsb);
+	int16_t outPut = (int16_t)(((int16_t) msb << 8) | lsb);
 	outPut = ~(outPut);
 	outPut += 1;
 	return outPut;
@@ -271,7 +270,7 @@ int16_t convert2CBytesToInt16(char msb, char lsb) {
 /*Convert 2`s complement bytes to 16 bit unsigned integer                        */
 /************************************************************************/
 uint16_t convert2CBytesToUInt16(char msb, char lsb) {
-	uint16_t outPut = (uint16_t) (((uint16_t) msb << 8) | lsb);
+	uint16_t outPut = (uint16_t)(((uint16_t) msb << 8) | lsb);
 	outPut = ~(outPut);
 	outPut += 1;
 	return outPut;
@@ -281,7 +280,7 @@ uint16_t convert2CBytesToUInt16(char msb, char lsb) {
 /*Convert bytes to 16 bit integer                                       */
 /************************************************************************/
 int16_t convertBytesToInt16(char msb, char lsb) {
-	int16_t outPut = (int16_t) (((int16_t) msb << 8) | lsb);
+	int16_t outPut = (int16_t)(((int16_t) msb << 8) | lsb);
 	return outPut;
 }
 
@@ -297,7 +296,7 @@ int convertBytesToInt(char msb, char lsb) {
 /*Convert bytes to 16 bit unsigned integer                                       */
 /************************************************************************/
 uint16_t convertBytesToUInt16(char msb, char lsb) {
-	uint16_t outPut = (uint16_t) (((uint16_t) msb << 8) | lsb);
+	uint16_t outPut = (uint16_t)(((uint16_t) msb << 8) | lsb);
 	return outPut;
 }
 
@@ -322,30 +321,48 @@ char* convertInt16ToBytes(int16_t data, char *buffer) {
 /************************************************************************/
 /* Applies dead band for int16_t                                         */
 /************************************************************************/
-int16_t applyDeadBandInt16(int16_t value, int16_t boundary) {
-	if (abs(value) >= boundary) {
-		if (value < 0.0f) {
+int16_t applyDeadBandInt16(int16_t neutralValue, int16_t value, int16_t boundary) {
+	int16_t delta = value - neutralValue;
+	if (abs(delta) >= boundary) {
+		if (delta < 0.0f) {
 			return value + boundary;
 		} else {
 			return value - boundary;
 		}
 	} else {
-		return 0;
+		return neutralValue;
 	}
 }
 
 /************************************************************************/
 /* Applies dead band for floats                                         */
 /************************************************************************/
-float applyDeadBandFloat(float value, float boundary) {
-	if (fabsf(value) >= boundary) {
-		if (value < 0.0f) {
+float applyDeadBandFloat(float neutralValue , float value, float boundary) {
+	float delta = value - neutralValue;
+	if (fabsf(delta) >= boundary) {
+		if (delta < 0.0f) {
 			return value + boundary;
 		} else {
 			return value - boundary;
 		}
 	} else {
-		return 0.0f;
+		return neutralValue;
+	}
+}
+
+/************************************************************************/
+/* Applies dead band  for double                                        */
+/************************************************************************/
+double applyDeadBandDouble(double neutralValue,double value, double boundary) {
+	double delta = value - neutralValue;
+	if (fabs(delta) >= boundary) {
+		if (delta < 0.0f) {
+			return value + boundary;
+		} else {
+			return value - boundary;
+		}
+	} else {
+		return neutralValue;
 	}
 }
 
@@ -365,20 +382,7 @@ float applyLowerDeadBandFloat(float value, float boundary) {
 	}
 }
 
-/************************************************************************/
-/* Applies dead band  for double                                        */
-/************************************************************************/
-double applyDeadBandDouble(double value, double boundary) {
-	if (fabs(value) >= boundary) {
-		if (value < 0.0f) {
-			return value + boundary;
-		} else {
-			return value - boundary;
-		}
-	} else {
-		return 0.0f;
-	}
-}
+
 
 // reverses a string 'str' of length 'len'
 void reverseString(char *str, int len) {

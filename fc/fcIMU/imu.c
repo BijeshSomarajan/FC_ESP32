@@ -24,7 +24,6 @@ void imuSetMode(uint8_t stabilize) {
 	imuFilterSetMode(stabilize);
 }
 
-
 #if IMU_RM_LINEAR_ACC_ENABLED == 1
 //Calculates linear acceleration
 void calculateLinearAcc(float dt) {
@@ -79,7 +78,7 @@ void calculateLinearAcc(float dt) {
 #endif
 	float sensorAzGFinal = sensorAxG * sinAccRoll + sensorAyG * sinAccPitch + sensorAzG * cosAccRoll * cosAccPitch;
 	imuData.linAzGRaw = sensorAzGFinal - 1.0f;
-	imuData.linAzG = applyDeadBandFloat(imuData.linAzGRaw - imuZAccBias, IMU_Z_ACC_DB);
+	imuData.linAzG = applyDeadBandFloat(0.0f, imuData.linAzGRaw - imuZAccBias, IMU_Z_ACC_DB);
 	float pitchAbs = fabsf(imuData.pitch);
 	float rollAbs = fabsf(imuData.roll);
 	if (pitchAbs > IMU_LIN_ACC_VALID_ANGLE || rollAbs > IMU_LIN_ACC_VALID_ANGLE) {

@@ -20,6 +20,10 @@
 #endif
 #include "lwip/err.h"
 #include "lwip/sys.h"
+#include "lwip/sockets.h"
+#include "lwip/sys.h"
+#include <lwip/netdb.h>
+
 #include "esp_http_server.h"
 #include "fcLogger.h"
 #include "mathUtil.h"
@@ -31,6 +35,5 @@
 #define FC_WIFI_INIT_WEBSERVER 1
 
 uint8_t initWifi(void);
-uint8_t startHttpServer(void);
 
 #endif

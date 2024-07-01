@@ -74,6 +74,7 @@ void updateAltitudeDataTask(void *pvParameters) {
 			resetAltitudeControl(1);
 			fcStatusData.throttlePercentage = 0;
 			controlData.throttleControl = 0;
+			fcStatusData.currentThrottle = 0;
 			altMgrThAggregationDt = 0;
 			lowPassFilterReset(&altMgrThrottleControlLPF);
 		} else if (fcStatusData.canFly) {
@@ -83,6 +84,7 @@ void updateAltitudeDataTask(void *pvParameters) {
 			resetAltitudeControl(1);
 			fcStatusData.throttlePercentage = 0;
 			controlData.throttleControl = 0;
+			fcStatusData.currentThrottle = 0;
 			altMgrThAggregationDt = 0;
 		}
 	}
@@ -193,7 +195,7 @@ void aggregateThrottle(float dt) {
 }
 
 void calculateAltVelocity(float dt) {
-	float altitudeV = applyDeadBandFloat((imuData.linVz) * ALT_MGR_VERTICAL_VELOCITY_INPUT_GAIN, ALT_MGR_VERTICAL_VELOCITY_DEADBAND);
+	float altitudeV = applyDeadBandFloat(0.0f, (imuData.linVz) * ALT_MGR_VERTICAL_VELOCITY_INPUT_GAIN, ALT_MGR_VERTICAL_VELOCITY_DEADBAND);
 	altitudeData.verticalVelocity = altitudeV * ALT_MGR_VERTICAL_VELOCITY_OUTPUT_GAIN;
 	altitudeData.verticalVelocity = constrainToRangeF(altitudeData.verticalVelocity, -ALT_MGR_VERTICAL_VELOCITY_MAX, ALT_MGR_VERTICAL_VELOCITY_MAX);
 	altitudeData.verticalVelocity = lowPassFilterUpdate(&altMgrVelocityLPF, altitudeData.verticalVelocity, dt);
@@ -246,11 +248,11 @@ void manageAltitude(float dt) {
 		}
 		float altDelta = altitudeData.altitudeSeaLevel - fcStatusData.altitudeRefSeaLevel;
 		altDelta = constrainToRangeF(altDelta, -ALT_MGR_ALT_MAX_DISTANCE_DELTA, ALT_MGR_ALT_MAX_DISTANCE_DELTA);
-		#if ALT_MGR_ALT_DETLA_DOWN_SQRT_ENABLE == 1
+#if ALT_MGR_ALT_DETLA_DOWN_SQRT_ENABLE == 1
 		if (altDelta > 0.0f) {
 			altDelta = sqrtf(altDelta);
 		}
-		#endif
+#endif
 		controlAltitudeWithGain(dt, altDelta, 0.0f, altMgrKPGain, altMgrKIGain, 1.0f, altMgrRateKDGain);
 	}
 	lowPassFilterUpdate(&altMgrThrottleControlLPF, controlData.throttleControl + controlData.altitudeControl, dt);

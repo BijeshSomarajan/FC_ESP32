@@ -1,7 +1,7 @@
 {
     "version":            "1.1",
     "project_name":       "ESP32_FC",
-    "project_version":    "785787d-dirty",
+    "project_version":    "9addfcf-dirty",
     "project_path":       "F:/Bijesh/ESP_Workspace/ESP32_FC",
     "idf_path":           "F:/softwares/Espressif/esp-idf-v5.2.1",
     "build_dir":          "F:/Bijesh/ESP_Workspace/ESP32_FC/build",
@@ -730,7 +730,7 @@
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "file": "F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/fcIO/libfcIO.a",
-            "sources": [ "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcIO/pwm/fcPWM.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcIO/spi/fcSPI.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcIO/wifi/fcWifi.c" ],
+            "sources": [ "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcIO/pwm/fcPWM.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcIO/spi/fcSPI.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcIO/wifi/fcWifi.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcIO/wifi/fcWifiIO.c" ],
             "include_dirs": [ "include" ]
         },
         "fcLogger": {
