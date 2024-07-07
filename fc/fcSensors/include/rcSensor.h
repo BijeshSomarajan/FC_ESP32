@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 
-#define WIFI_RC_SENSOR_ENABLED 1
+#define WIFI_RC_SENSOR_ENABLED 0
 
 #define RC_CHANNEL_COUNT 10
 #define RC_CHANNEL_MAX_INDEX (RC_CHANNEL_COUNT-1)

@@ -42,7 +42,7 @@
 #define ALT_MGR_CONTROL_RATE_D_GAIN_MIN 0.01f
 #define ALT_MGR_CONTROL_RATE_D_GAIN_FACTOR  0.1f
 
-#define ALT_MGR_ALT_DETLA_DOWN_SQRT_ENABLE  1
+#define ALT_MGR_ALT_DETLA_SQRT_ENABLE  1
 
 uint8_t initAltitudeManager(void);
 uint8_t startAltitudeManager(void);

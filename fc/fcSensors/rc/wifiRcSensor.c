@@ -27,6 +27,7 @@ uint8_t initRCSensors() {
 		logString("Wifi Rc Sensor , Init Failed!\n");
 		return 0;
 	}
+	rcData.readDt = 0;
 	return 1;
 }
 
@@ -92,6 +93,7 @@ void unMarshallWifiData(uint8_t *inputData, int inputLen) {
 	tempData |= (uint16_t) (inputData[10] << 8);
 	wifiRcChannelValue[RC_YAW_CHANNEL_INDEX] = tempData;
 
+
 	/*
 	char tempDebug[100];
 	sprintf(tempDebug, "Start:%d, Land:%d, Pos:%d, Th:%d, Pitch:%d, Roll:%d, Yaw:%d\n", wifiRcChannelValue[RC_START_CHANNEL_INDEX], wifiRcChannelValue[RC_LAND_CHANNEL_INDEX], wifiRcChannelValue[RC_POS_CHANNEL_INDEX], wifiRcChannelValue[RC_TH_CHANNEL_INDEX],
@@ -105,6 +107,7 @@ void handleWifiRxData(uint8_t *inputData, int inputLen, uint8_t *outputData, uin
 	float dt = getUSecTimeInSec(currentTimeUs - wifiRcDataLoadLastTimeUs);
 	wifiRcDataLoadLastTimeUs = currentTimeUs;
 	unMarshallWifiData(inputData, inputLen);
+	rcData.readDt = dt;
 	processRCData(dt);
 	determineFCState();
 	getMarshalledFCState(outputData, outputLen);

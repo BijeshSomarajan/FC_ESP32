@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define WIFI_RC_MANAGER_ENABLED 1
+#define WIFI_RC_MANAGER_ENABLED 0
 
 #define RC_FAIL_SAFE_ACTIVATION_PERIOD  1.0f // Fail safe activated after a second
 #define THROTTLE_CENTER_DEADBAND  10

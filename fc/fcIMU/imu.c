@@ -1,5 +1,4 @@
-#include "include/imu.h"
-#include "imuConfig.h"
+#include "imu.h"
 #include "attitudeSensor.h"
 #include "mahonyFilter_BF.h"
 
@@ -10,7 +9,8 @@ float imuMagInclination = 0;
 float imuZAccBias = 0.0f;
 
 LEAKYINTEGRATIONFILTER imuZLeakyIntFilter;
-LOWPASSFILTER imuLinAccZLPF;
+LOWPASSFILTER imuLinAccXLPF, imuLinAccYLPF, imuLinAccZLPF;
+LOWPASSFILTER imuLinVelZRefLPF;
 
 void setImuZAccBias(float bias) {
 	imuZAccBias = bias;
@@ -31,9 +31,10 @@ void calculateLinearAcc(float dt) {
 	float sensorAzG = attitudeData.azG;
 #if IMU_LIN_ACC_LPF_ENABLED == 1
 	sensorAzG = lowPassFilterUpdate(&imuLinAccZLPF, sensorAzG, dt);
+
 #endif
 	imuData.linAzGRaw = sensorAzG - linAzG;
-	imuData.linAzG = applyDeadBandFloat(imuData.linAzGRaw - imuZAccBias, IMU_Z_ACC_DB);
+	imuData.linAzG = applyDeadBandFloat(0.0f,imuData.linAzGRaw - imuZAccBias, IMU_Z_ACC_DB);
 	float pitchAbs = fabsf(imuData.pitch);
 	float rollAbs = fabsf(imuData.roll);
 	if (pitchAbs > IMU_LIN_ACC_VALID_ANGLE || rollAbs > IMU_LIN_ACC_VALID_ANGLE) {
@@ -43,7 +44,6 @@ void calculateLinearAcc(float dt) {
 		imuData.linVx = 0;
 		imuData.linVy = 0;
 		imuData.linVz = 0;
-		imuData.linVzHf = 0;
 		leakyIntegrationFilterReset(&imuZLeakyIntFilter, 0);
 	} else {
 		imuData.linVz = leakyIntegrationFilterUpdate(&imuZLeakyIntFilter, imuData.linAzG, dt) * IMU_ACC_VEL_GAIN;
@@ -56,6 +56,8 @@ void calculateLinearAcc(float dt) {
 	float sensorAyG = attitudeData.ayG;
 	float sensorAzG = attitudeData.azG;
 #if IMU_LIN_ACC_LPF_ENABLED == 1
+	sensorAxG = lowPassFilterUpdate(&imuLinAccXLPF, sensorAxG, dt);
+	sensorAyG = lowPassFilterUpdate(&imuLinAccYLPF, sensorAyG, dt);
 	sensorAzG = lowPassFilterUpdate(&imuLinAccZLPF, sensorAzG, dt);
 #endif
 	float axSquare = sensorAxG * sensorAxG;
@@ -85,8 +87,13 @@ void calculateLinearAcc(float dt) {
 		imuData.linAzG = 0;
 		imuData.linVz = 0;
 		leakyIntegrationFilterReset(&imuZLeakyIntFilter, 0);
+		lowPassFilterResetToValue(&imuLinVelZRefLPF, 0);
 	} else {
-		imuData.linVz = leakyIntegrationFilterUpdate(&imuZLeakyIntFilter, imuData.linAzG, dt) * IMU_ACC_VEL_GAIN;
+		float linActual = leakyIntegrationFilterUpdate(&imuZLeakyIntFilter, imuData.linAzG, dt) * IMU_ACC_VEL_GAIN;
+		float linRef = lowPassFilterUpdate(&imuLinVelZRefLPF, linActual, dt);
+		imuData.linVz = linActual - linRef;
+		imuData.linVzRef = linRef;
+		imuData.linVzAct = linActual;
 	}
 }
 #endif
@@ -115,8 +122,11 @@ uint8_t imuInit(float pMagInclination) {
 	imuFilterInit(1);
 	leakyIntegrationFilterInit(&imuZLeakyIntFilter, IMU_ALT_VEL_BIAS_LEAK_FACTOR);
 #if IMU_LIN_ACC_LPF_ENABLED == 1
+	lowPassFilterInit(&imuLinAccXLPF, IMU_LIN_ACC_LPF_CUTOFF);
+	lowPassFilterInit(&imuLinAccYLPF, IMU_LIN_ACC_LPF_CUTOFF);
 	lowPassFilterInit(&imuLinAccZLPF, IMU_LIN_ACC_LPF_CUTOFF);
 #endif
+	lowPassFilterInit(&imuLinVelZRefLPF, IMU_LIN_VEL_REF_LPF_CUTOFF);
 	return 1;
 }
 

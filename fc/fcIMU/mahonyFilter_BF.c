@@ -2,8 +2,8 @@
 #include "include/imu.h"
 
 float mahonyFilter_BF_KP = MAHONY_BF_FILTER_KP;
-float mahonyFilter_BF_KI = 0;
-
+float mahonyFilter_BF_KI = MAHONY_BF_FILTER_KI;
+float mahonyFilter_MaxSpinRateRad = 0;
 MahonyFilter_BF_QuaternionProducts mahonyFilter_BF_Qp = { .ww = 1, .wx = 0, .wy = 0, .wz = 0, .xx = 0, .xy = 0, .xz = 0, .yy = 0, .yz = 0, .zz = 0 };
 
 // Integral error terms
@@ -38,7 +38,7 @@ void imuFilterUpdateAngles(void) {
  * Converts yaw to heading
  */
 void imuFilterUpdateHeading(float magIncl) {
-	imuData.heading = -imuData.yaw ;
+	imuData.heading = -imuData.yaw;
 	if (imuData.heading < 0.0f) {
 		imuData.heading += 360.0f;
 	} else if (imuData.heading > 360.0f) {
@@ -93,13 +93,12 @@ void imuFilterUpdate(float dt) {
 	float my = attitudeData.my;
 	float mz = attitudeData.mz;
 	float halfDt = 0.5f * dt;
-
 	// Use raw heading error (from GPS or whatever else)
 	float ex = 0, ey = 0, ez = 0;
 
-	// Use measured magnetic field vector
-	float recipMagNorm = power2f(mx) + power2f(my) + power2f(mz);
-	if (recipMagNorm > 0.01f) {
+	if (!((mx == 0.0f) && (my == 0.0f) && (mz == 0.0f))) {
+		// Use measured magnetic field vector
+		float recipMagNorm = power2f(mx) + power2f(my) + power2f(mz);
 		// Normalize magnetometer measurement
 #if MAHONY_BF_FILTER_BF_USE_SQRT_APPROX == 1
 		recipMagNorm = fastInvSqrtf(recipMagNorm);
@@ -123,12 +122,13 @@ void imuFilterUpdate(float dt) {
 		ey += (imuData.rMatrix[2][1] * ez_ef);
 		ez += (imuData.rMatrix[2][2] * ez_ef);
 	}
-	// Use measured acceleration vector
-	float recipAccNorm = power2f(ax) + power2f(ay) + power2f(az);
-	if (recipAccNorm > 0.01f) {
+
+	if (!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f))) {
+		// Use measured acceleration vector
+		float recipAccNorm = power2f(ax) + power2f(ay) + power2f(az);
 		// Normalize accelerometer measurement
 #if MAHONY_BF_FILTER_BF_USE_SQRT_APPROX == 1
-		recipMagNorm = fastInvSqrtf(recipMagNorm);
+		recipAccNorm = fastInvSqrtf(recipAccNorm);
 #else
 		recipAccNorm = invSqrtf(recipAccNorm);
 #endif
@@ -146,7 +146,7 @@ void imuFilterUpdate(float dt) {
 		// Calculate general spin rate (rad/s)
 		float spin_rate = sqrtf(power2f(gx) + power2f(gy) + power2f(gz));
 		// Stop integrating if spinning beyond the certain limit
-		if (spin_rate < convertDegToRad(MAHONY_BF_FILTER_BF_SPIN_RATE_LIMIT)) {
+		if (spin_rate <= mahonyFilter_MaxSpinRateRad) {
 			mahonyFilter_BF_IBx += (mahonyFilter_BF_KI * ex * dt);    // integral error scaled by Ki
 			mahonyFilter_BF_IBy += (mahonyFilter_BF_KI * ey * dt);
 			mahonyFilter_BF_IBz += (mahonyFilter_BF_KI * ez * dt);
@@ -203,6 +203,7 @@ uint8_t imuFilterInit(uint8_t stabilize) {
 	imuFilterSetMode(stabilize);
 	imuFilterReset();
 	mahonyFilter_BF_ComputeRotationMatrix();
+	mahonyFilter_MaxSpinRateRad = convertDegToRad(MAHONY_BF_FILTER_BF_SPIN_RATE_LIMIT);
 	return 1;
 }
 

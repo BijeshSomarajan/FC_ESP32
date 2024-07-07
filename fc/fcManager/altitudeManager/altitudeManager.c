@@ -248,8 +248,9 @@ void manageAltitude(float dt) {
 		}
 		float altDelta = altitudeData.altitudeSeaLevel - fcStatusData.altitudeRefSeaLevel;
 		altDelta = constrainToRangeF(altDelta, -ALT_MGR_ALT_MAX_DISTANCE_DELTA, ALT_MGR_ALT_MAX_DISTANCE_DELTA);
-#if ALT_MGR_ALT_DETLA_DOWN_SQRT_ENABLE == 1
-		if (altDelta > 0.0f) {
+
+#if ALT_MGR_ALT_DETLA_SQRT_ENABLE == 1
+		if (altDelta > 0.0f) { // This check is required else take fabs
 			altDelta = sqrtf(altDelta);
 		}
 #endif

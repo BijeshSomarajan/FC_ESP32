@@ -251,7 +251,7 @@ IGNORE_EXTRA_COMPONENT:UNINITIALIZED=
 PROJECT_SOURCE_DIR:UNINITIALIZED=F:/Bijesh/ESP_Workspace/ESP32_FC
 
 //No help, variable specified on the command line.
-PYTHON:UNINITIALIZED=F:/softwares/Espressif-new/python_env/idf5.2_py3.10_env/Scripts/python.exe
+PYTHON:UNINITIALIZED=python
 
 //No help, variable specified on the command line.
 PYTHON_DEPS_CHECKED:UNINITIALIZED=1

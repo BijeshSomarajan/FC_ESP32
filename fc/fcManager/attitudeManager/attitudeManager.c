@@ -236,7 +236,6 @@ void updateAttitudeControlTask(void *arg) {
 		lastThrottlePercentage = fcStatusData.throttlePercentage;
 		calculateMotorNoise(fcStatusData.throttlePercentage);
 		resetAttitudeControl(1);
-
 	}
 }
 

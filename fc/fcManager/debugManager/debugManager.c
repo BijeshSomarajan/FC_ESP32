@@ -25,8 +25,8 @@ void debugTime() {
 	DEBUG_DATA_BUFFER[3] = 1.0f / attitudeData.magDt;
 	DEBUG_DATA_BUFFER[4] = 1.0f / attitudeData.tempDt;
 	DEBUG_DATA_BUFFER[5] = 1.0f / altitudeData.dt;
-	DEBUG_DATA_BUFFER[6] = rcData.cpu;
-//	DEBUG_DATA_BUFFER[7] = 1.0f / rcData.readDt;
+	//DEBUG_DATA_BUFFER[6] = rcData.cpu;
+	DEBUG_DATA_BUFFER[6] = 1.0f / rcData.readDt;
 	sendConfigData(DEBUG_DATA_BUFFER, 7, CMD_FC_DATA);
 }
 
@@ -34,11 +34,11 @@ void debugImu() {
 	DEBUG_DATA_BUFFER[0] = imuData.pitch * 10;
 	DEBUG_DATA_BUFFER[1] = imuData.roll * 10;
 	DEBUG_DATA_BUFFER[2] = imuData.heading;
-	DEBUG_DATA_BUFFER[3] = imuData.linVz * 1000;
-	DEBUG_DATA_BUFFER[4] = (1.0f / imuData.dt)/10.0f;
-	DEBUG_DATA_BUFFER[5] = (1.0f / attitudeData.gyroDt)/10.0f;
-	DEBUG_DATA_BUFFER[6] =  fcStatusData.hasCrashed * 1000;
-	DEBUG_DATA_BUFFER[7] =  fcStatusData.canFly*1000;
+	DEBUG_DATA_BUFFER[3] = imuData.rollRate * 10;
+	DEBUG_DATA_BUFFER[4] = imuData.pitchRate * 10;
+	DEBUG_DATA_BUFFER[5] = imuData.linVz * 1000;
+	DEBUG_DATA_BUFFER[6] = altitudeData.verticalVelocity * 10;
+	DEBUG_DATA_BUFFER[7] = fcStatusData.throttlePercentage * 100;
 	sendConfigData(DEBUG_DATA_BUFFER, 8, CMD_FC_DATA);
 }
 
@@ -75,9 +75,9 @@ void debugRC() {
 	DEBUG_DATA_BUFFER[6] = rcData.RC_DELTA_DATA[RC_TH_CHANNEL_INDEX];
 	DEBUG_DATA_BUFFER[7] = rcData.RC_EFFECTIVE_DATA[RC_TH_CHANNEL_INDEX];
 	/*
-	DEBUG_DATA_BUFFER[6] = 1.0f / rcData.processDt;
-	DEBUG_DATA_BUFFER[7] = 1.0f / imuData.dt;
-	*/
+	 DEBUG_DATA_BUFFER[6] = 1.0f / rcData.processDt;
+	 DEBUG_DATA_BUFFER[7] = 1.0f / imuData.dt;
+	 */
 	sendConfigData(DEBUG_DATA_BUFFER, 8, CMD_FC_DATA);
 }
 
@@ -108,10 +108,10 @@ void debugAltitude() {
 
 void doFcDebug(float dt) {
 	//debugAltitude();
-	debugAttitude();
+	//debugAttitude();
 	//debugRC();
 	//debugTime();
-	//debugImu();
+	debugImu();
 	//debugFCStatus();
 }
 

@@ -8,6 +8,19 @@
 #include "mathUtil.h"
 #include "matrixUtil.h"
 
+#define MAG_INCLINATION -1.41f //-1.41// 1.21?https://www.magnetic-declination.com/India/Bangalore/1132482.html
+#define IMU_VEL_TRIG_APPROX_ENABLED 0
+#define IMU_RM_LINEAR_ACC_ENABLED 0
+
+#define IMU_LIN_ACC_LPF_ENABLED 1
+#define IMU_LIN_ACC_LPF_CUTOFF  100.0f
+#define IMU_LIN_VEL_REF_LPF_CUTOFF  0.25f
+
+#define IMU_Z_ACC_DB  0.0f
+#define IMU_ALT_VEL_BIAS_LEAK_FACTOR  0.225f
+#define IMU_LIN_ACC_VALID_ANGLE  30.0f
+#define IMU_ACC_VEL_GAIN  9.81f
+
 /**
  * Structure representing IMU data
  */
@@ -27,15 +40,13 @@ struct _IMU_DATA {
 	float linAxGRaw, linAyGRaw, linAzGRaw ;
 	float linAxG, linAyG, linAzG;
 	float linVz, linVx, linVy;
-
+	float linVzRef;
+	float linVzAct;
 	uint8_t cpu;
 	float dt;
 };
 
 extern IMU_DATA imuData ;
-#define MAG_INCLINATION -1.41f //-1.41// 1.21?https://www.magnetic-declination.com/India/Bangalore/1132482.html
-#define IMU_VEL_TRIG_APPROX_ENABLED 1
-#define IMU_RM_LINEAR_ACC_ENABLED 0
 
 uint16_t getImuStabilizationCount(void);
 uint8_t imuInit(float magIncl);
