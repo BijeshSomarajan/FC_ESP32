@@ -13,7 +13,7 @@
 #include "delayTimer.h"
 #include "deltaTimer.h"
 #include "indicatorSensor.h"
-#include "managerConfig.h"
+#include "cpuConfig.h"
 
 TaskHandle_t rcMgrTaskHandle;
 

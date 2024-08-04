@@ -1,3 +1,4 @@
+#include "cpuConfig.h"
 #include "altitudeManager.h"
 #include "altitudeSensor.h"
 #include "fcStatus.h"
@@ -8,7 +9,6 @@
 #include "mathUtil.h"
 #include "fcLogger.h"
 #include "deltaTimer.h"
-#include "managerConfig.h"
 #include "control.h"
 #include "lowPassFilter.h"
 #include "imu.h"
@@ -122,10 +122,6 @@ void altitudeManagerTimerTask(void *pvParameters) {
 		if (altitudeManagerStartTimers()) {
 			logString("Altitude Manager , Timer Start success , Task running!\n");
 			vTaskDelete(altitudeMgrTaskHandle);
-			/*
-			 for (;;) {
-			 vTaskDelay(1);
-			 }*/
 		} else {
 			logString("Altitude Manager , Timer Start failed , Task Exiting!\n");
 		}
@@ -250,7 +246,7 @@ void manageAltitude(float dt) {
 		altDelta = constrainToRangeF(altDelta, -ALT_MGR_ALT_MAX_DISTANCE_DELTA, ALT_MGR_ALT_MAX_DISTANCE_DELTA);
 
 #if ALT_MGR_ALT_DETLA_SQRT_ENABLE == 1
-		if (altDelta > 0.0f) { // This check is required else take fabs
+		if (altDelta > 0.0f) {
 			altDelta = sqrtf(altDelta);
 		}
 #endif

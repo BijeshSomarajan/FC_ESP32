@@ -107,20 +107,45 @@ double power2(double x) {
 double power3(double x) {
 	return x * x * x;
 }
-union FAST_INV_DATA fastInvData;
-float fastInvSqrtf(float x) {
-	fastInvData.f = x;
-	fastInvData.i = 0x5f3759df - (fastInvData.i >> 1);
-	fastInvData.f *= 1.5f - (x * 0.5f * fastInvData.f * fastInvData.f);
-	return fastInvData.f;
+
+union FAST_SQRT_DATA fastInvSqrtData;
+float fastInvSqrtf(float val) {
+	float x = val;
+	if (x < 0) {
+		x = -x;
+	}
+	fastInvSqrtData.f = x;
+	fastInvSqrtData.i = 0x5f3759df - (fastInvSqrtData.i >> 1);
+	fastInvSqrtData.f *= 1.5f - (x * 0.5f * fastInvSqrtData.f * fastInvSqrtData.f);
+	if (val < 0) {
+		return -fastInvSqrtData.f;
+	} else {
+		return fastInvSqrtData.f;
+	}
+}
+
+union FAST_SQRT_DATA fastSqrtData;
+float fastSqrtf(float x) {
+	const float xhalf = 0.5f * x;
+	fastSqrtData.f = x;
+	fastSqrtData.i = 0x5f3759df - (fastSqrtData.i >> 1);  // gives initial guess y0
+	return x * fastSqrtData.f * (1.5f - xhalf * fastSqrtData.f * fastSqrtData.f);  // Newton step, repeating increases accuracy
 }
 
 double invSqrt(double x) {
-	return 1.0f / sqrt(x);
+	if (x < 0) {
+		return -1.0 / sqrt(-x);
+	} else {
+		return 1.0f / sqrt(x);
+	}
 }
 
 float invSqrtf(float x) {
-	return 1.0f / sqrtf(x);
+	if (x < 0) {
+		return -1.0f / sqrtf(-x);
+	} else {
+		return 1.0f / sqrtf(x);
+	}
 }
 
 float power2f(float x) {

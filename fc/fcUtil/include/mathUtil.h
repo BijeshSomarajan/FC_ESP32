@@ -37,11 +37,12 @@ double invSqrt(double x);
 float power3f(float x);
 float power2f(float x);
 
-union FAST_INV_DATA {
+union FAST_SQRT_DATA {
 	float f;
 	uint32_t i;
 };
 float fastInvSqrtf(float x);
+float fastSqrtf(float x);
 float invSqrtf(float x);
 
 //Byte operations

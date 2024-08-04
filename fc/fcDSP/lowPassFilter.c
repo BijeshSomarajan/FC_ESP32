@@ -5,7 +5,7 @@
 /************************************************************************/
 void lowPassFilterInit(LOWPASSFILTER *self, float cutOff) {
 	self->cutOff = cutOff;
-	self->rc = 1.0f / (self->cutOff * 2.0f * 3.14159f);
+	self->rc = 1.0f / (self->cutOff * 2.0f * PI_Val);
 	self->output = 0;
 }
 
@@ -14,7 +14,7 @@ void lowPassFilterInit(LOWPASSFILTER *self, float cutOff) {
  */
 void lowPassFilterSetCutOff(LOWPASSFILTER *self, float cutOff) {
 	self->cutOff = cutOff;
-	self->rc = 1.0f / (self->cutOff * 2.0f * 3.14159f);
+	self->rc = 1.0f / (self->cutOff * 2.0f * PI_Val);
 }
 
 /************************************************************************/

@@ -87,13 +87,15 @@ void calculateLinearAcc(float dt) {
 		imuData.linAzG = 0;
 		imuData.linVz = 0;
 		leakyIntegrationFilterReset(&imuZLeakyIntFilter, 0);
-		lowPassFilterResetToValue(&imuLinVelZRefLPF, 0);
+		//lowPassFilterResetToValue(&imuLinVelZRefLPF, 0);
 	} else {
 		float linActual = leakyIntegrationFilterUpdate(&imuZLeakyIntFilter, imuData.linAzG, dt) * IMU_ACC_VEL_GAIN;
-		float linRef = lowPassFilterUpdate(&imuLinVelZRefLPF, linActual, dt);
-		imuData.linVz = linActual - linRef;
-		imuData.linVzRef = linRef;
-		imuData.linVzAct = linActual;
+		imuData.linVz = linActual;
+
+		//float linRef = lowPassFilterUpdate(&imuLinVelZRefLPF, linActual, dt);
+		//imuData.linVz = linActual - linRef;
+		//imuData.linVzRef = linRef;
+		//imuData.linVzAct = linActual;
 	}
 }
 #endif
@@ -136,6 +138,8 @@ uint8_t imuInit(float pMagInclination) {
 void imuReset(uint8_t hard) {
 	leakyIntegrationFilterReset(&imuZLeakyIntFilter, 0);
 #if IMU_LIN_ACC_LPF_ENABLED == 1
+	lowPassFilterResetToValue(&imuLinAccXLPF, attitudeData.axG);
+	lowPassFilterResetToValue(&imuLinAccYLPF, attitudeData.ayG);
 	lowPassFilterResetToValue(&imuLinAccZLPF, attitudeData.azG);
 #endif
 	if (hard) {

@@ -10,26 +10,11 @@
 MEMSDATA memsData;
 ATTITUDE_DATA attitudeData;
 
-//BiQuald LPF and Notch Filters
-BIQUADFILTER sensorAccXBiLpF, sensorAccYBiLpF, sensorAccZBiLpF;
-BIQUADFILTER sensorGyroXBiLpF, sensorGyroYBiLpF, sensorGyroZBiLpF;
-BIQUADFILTER sensorAccXBiNtF, sensorAccYBiNtF, sensorAccZBiNtF;
-BIQUADFILTER sensorGyroXBiNtF, sensorGyroYBiNtF, sensorGyroZBiNtF;
-
-//Low pass filters
-LOWPASSFILTER sensorTempLPF;
-LOWPASSFILTER sensorMagXLPF, sensorMagYLPF, sensorMagZLPF;
-
 //Calibration related
 LOWPASSFILTER sensorAccXCalibLPF, sensorAccYCalibLPF, sensorAccZCalibLPF;
 LOWPASSFILTER sensorGyroXCalibLPF, sensorGyroYCalibLPF, sensorGyroZCalibLPF;
 LOWPASSFILTER sensorTempCalibLPF;
 int32_t sensorAttitudeTempCalibData[9];
-
-float maxMotorNoiseFrequency;
-float motorNoiseThFrequencyGain;
-float currentGyroNoiseFrequency;
-float currentAccNoiseFrequency;
 
 void resetAttitudeSensors() {
 	attitudeData.axG = 0;
@@ -49,20 +34,6 @@ void resetAttitudeSensors() {
 	attitudeData.mz = 0;
 	attitudeData.temp = 0;
 	attitudeData.tempRaw = 0;
-	//Reset ACC BiQuad filter
-	biQuadFilterReset(&sensorAccXBiLpF);
-	biQuadFilterReset(&sensorAccYBiLpF);
-	biQuadFilterReset(&sensorAccZBiLpF);
-	//Reset Gyro BiQuad filter
-	biQuadFilterReset(&sensorGyroXBiLpF);
-	biQuadFilterReset(&sensorGyroYBiLpF);
-	biQuadFilterReset(&sensorGyroZBiLpF);
-	//Reset Mag LPF filter
-	lowPassFilterReset(&sensorMagXLPF);
-	lowPassFilterReset(&sensorMagYLPF);
-	lowPassFilterReset(&sensorMagZLPF);
-	//Reset Temp LPF filter
-	lowPassFilterReset(&sensorTempLPF);
 }
 
 void loadAttitudeSensorConfig() {
@@ -121,34 +92,11 @@ void loadAttitudeSensorConfig() {
 	memsData.gyroZTempCoeff[3] = getCalibrationValue(CALIB_PROP_IMU_TEMP_COEFF_GZ_C3_ADDR) / 10000000.0f; //0.00962;
 }
 
-uint8_t initAttitudeSensors(float motorKv, float batVolt, float nMotor) {
+uint8_t initAttitudeSensors(float motorKv, float batVolt, float nMotor, float nPropPairs) {
 	uint8_t status = memsInit();
 	if (status) {
 		loadAttitudeSensorConfig();
 		logString("[attitude] Calibration > Loaded\n");
-		//Bi Quad LPF for ACC
-		biQuadFilterInit(&sensorAccXBiLpF, BIQUAD_LOWPASS, SENSOR_ACC_BI_LPF_CENTER_FREQUENCY, SENSOR_ACC_SAMPLE_FREQUENCY, SENSOR_ACC_BI_LPF_Q, SENSOR_ACC_BI_LPF_PEAK_GAIN);
-		biQuadFilterInit(&sensorAccYBiLpF, BIQUAD_LOWPASS, SENSOR_ACC_BI_LPF_CENTER_FREQUENCY, SENSOR_ACC_SAMPLE_FREQUENCY, SENSOR_ACC_BI_LPF_Q, SENSOR_ACC_BI_LPF_PEAK_GAIN);
-		biQuadFilterInit(&sensorAccZBiLpF, BIQUAD_LOWPASS, SENSOR_ACC_BI_LPF_CENTER_FREQUENCY, SENSOR_ACC_SAMPLE_FREQUENCY, SENSOR_ACC_BI_LPF_Q, SENSOR_ACC_BI_LPF_PEAK_GAIN);
-		//Bi Quad LPF for Gyro
-		biQuadFilterInit(&sensorGyroXBiLpF, BIQUAD_LOWPASS, SENSOR_GYRO_BI_LPF_CENTER_FREQUENCY, SENSOR_GYRO_SAMPLE_FREQUENCY, SENSOR_GYRO_BI_LPF_Q, SENSOR_GYRO_BI_LPF_PEAK_GAIN);
-		biQuadFilterInit(&sensorGyroYBiLpF, BIQUAD_LOWPASS, SENSOR_GYRO_BI_LPF_CENTER_FREQUENCY, SENSOR_GYRO_SAMPLE_FREQUENCY, SENSOR_GYRO_BI_LPF_Q, SENSOR_GYRO_BI_LPF_PEAK_GAIN);
-		biQuadFilterInit(&sensorGyroZBiLpF, BIQUAD_LOWPASS, SENSOR_GYRO_BI_LPF_CENTER_FREQUENCY, SENSOR_GYRO_SAMPLE_FREQUENCY, SENSOR_GYRO_BI_LPF_Q, SENSOR_GYRO_BI_LPF_PEAK_GAIN);
-		//LPF for Mag
-		lowPassFilterInit(&sensorMagXLPF, SENSOR_MAG_LPF_FREQUENCY);
-		lowPassFilterInit(&sensorMagYLPF, SENSOR_MAG_LPF_FREQUENCY);
-		lowPassFilterInit(&sensorMagZLPF, SENSOR_MAG_LPF_FREQUENCY);
-		//LPF for Temperature
-		lowPassFilterInit(&sensorTempLPF, SENSOR_TEMP_LPF_FREQUENCY);
-
-		//BiQuad NTF filters for ACC
-		biQuadFilterInit(&sensorAccXBiNtF, BIQUAD_NOTCH, SENSOR_ACC_NTF_DEFAULT_CENTER_FREQ, SENSOR_ACC_SAMPLE_FREQUENCY, SENSOR_ACC_BI_NTF_Q, SENSOR_ACC_BI_NTF_PEAK_GAIN);
-		biQuadFilterInit(&sensorAccYBiNtF, BIQUAD_NOTCH, SENSOR_ACC_NTF_DEFAULT_CENTER_FREQ, SENSOR_ACC_SAMPLE_FREQUENCY, SENSOR_ACC_BI_NTF_Q, SENSOR_ACC_BI_NTF_PEAK_GAIN);
-		biQuadFilterInit(&sensorAccZBiNtF, BIQUAD_NOTCH, SENSOR_ACC_NTF_DEFAULT_CENTER_FREQ, SENSOR_ACC_SAMPLE_FREQUENCY, SENSOR_ACC_BI_NTF_Q, SENSOR_ACC_BI_NTF_PEAK_GAIN);
-		//BiQuad NTF filters for Gyro
-		biQuadFilterInit(&sensorGyroXBiNtF, BIQUAD_NOTCH, SENSOR_GYRO_NTF_DEFAULT_CENTER_FREQ, SENSOR_GYRO_SAMPLE_FREQUENCY, SENSOR_GYRO_BI_NTF_Q, SENSOR_GYRO_BI_NTF_PEAK_GAIN);
-		biQuadFilterInit(&sensorGyroYBiNtF, BIQUAD_NOTCH, SENSOR_GYRO_NTF_DEFAULT_CENTER_FREQ, SENSOR_GYRO_SAMPLE_FREQUENCY, SENSOR_GYRO_BI_NTF_Q, SENSOR_GYRO_BI_NTF_PEAK_GAIN);
-		biQuadFilterInit(&sensorGyroZBiNtF, BIQUAD_NOTCH, SENSOR_GYRO_NTF_DEFAULT_CENTER_FREQ, SENSOR_GYRO_SAMPLE_FREQUENCY, SENSOR_GYRO_BI_NTF_Q, SENSOR_GYRO_BI_NTF_PEAK_GAIN);
 
 		//Low pass filters for Calibration
 		lowPassFilterInit(&sensorAccXCalibLPF, SENSOR_AG_CALIB_LOWPASS_FREQ);
@@ -159,37 +107,13 @@ uint8_t initAttitudeSensors(float motorKv, float batVolt, float nMotor) {
 		lowPassFilterInit(&sensorGyroYCalibLPF, SENSOR_AG_CALIB_LOWPASS_FREQ);
 		lowPassFilterInit(&sensorGyroZCalibLPF, SENSOR_AG_CALIB_LOWPASS_FREQ);
 
-		lowPassFilterInit(&sensorTempCalibLPF,  SENSOR_AG_TEMP_CALIB_LOWPASS_FREQ);
-
+		lowPassFilterInit(&sensorTempCalibLPF, SENSOR_AG_TEMP_CALIB_LOWPASS_FREQ);
 		logString("[attitude] > Filters initialized Success\n");
-
-		maxMotorNoiseFrequency = ((motorKv * batVolt) / 60.0f) * nMotor;
-		motorNoiseThFrequencyGain = (maxMotorNoiseFrequency / 100.0f) * SENSOR_ACC_GYRO_NOISE_GAIN_FACTOR;
-		calculateMotorNoise(0);
-
 		logString("[attitude] > Success\n");
 	} else {
 		logString("[attitude] > Failed\n");
 	}
 	return status;
-}
-
-void calculateMotorNoise(float throttlePercentage) {
-	currentGyroNoiseFrequency = maxMotorNoiseFrequency * (throttlePercentage <= 0 ? 1 : throttlePercentage) * motorNoiseThFrequencyGain;
-	currentAccNoiseFrequency = currentGyroNoiseFrequency;
-
-	if (currentAccNoiseFrequency < SENSOR_ACC_NTF_DEFAULT_CENTER_FREQ) {
-		currentAccNoiseFrequency = SENSOR_ACC_NTF_DEFAULT_CENTER_FREQ;
-	}
-	if (currentGyroNoiseFrequency < SENSOR_GYRO_NTF_DEFAULT_CENTER_FREQ) {
-		currentGyroNoiseFrequency = SENSOR_GYRO_NTF_DEFAULT_CENTER_FREQ;
-	}
-	biQuadFilterSetCenterFreq(&sensorAccXBiNtF, currentAccNoiseFrequency);
-	biQuadFilterSetCenterFreq(&sensorAccYBiNtF, currentAccNoiseFrequency);
-	biQuadFilterSetCenterFreq(&sensorAccZBiNtF, currentAccNoiseFrequency);
-	biQuadFilterSetCenterFreq(&sensorGyroXBiNtF, currentGyroNoiseFrequency);
-	biQuadFilterSetCenterFreq(&sensorGyroYBiNtF, currentGyroNoiseFrequency);
-	biQuadFilterSetCenterFreq(&sensorGyroZBiNtF, currentGyroNoiseFrequency);
 }
 
 void processAccSensorData(float dt) {
@@ -209,17 +133,6 @@ void processAccSensorData(float dt) {
 	attitudeData.axG = constrainToRangeF(attitudeData.axG, -SENSOR_ACC_FLYABLE_VALUE_XY_LIMIT, SENSOR_ACC_FLYABLE_VALUE_XY_LIMIT);
 	attitudeData.ayG = constrainToRangeF(attitudeData.ayG, -SENSOR_ACC_FLYABLE_VALUE_XY_LIMIT, SENSOR_ACC_FLYABLE_VALUE_XY_LIMIT);
 	attitudeData.azG = constrainToRangeF(attitudeData.azG, -SENSOR_ACC_FLYABLE_VALUE_Z_LIMIT, SENSOR_ACC_FLYABLE_VALUE_Z_LIMIT);
-
-	//Apply notch filtering
-	attitudeData.axG = biQuadFilterUpdate(&sensorAccXBiNtF, attitudeData.axG);
-	attitudeData.ayG = biQuadFilterUpdate(&sensorAccYBiNtF, attitudeData.ayG);
-	attitudeData.azG = biQuadFilterUpdate(&sensorAccZBiNtF, attitudeData.azG);
-
-	//Apply lowpass filtering
-	attitudeData.axG = biQuadFilterUpdate(&sensorAccXBiLpF, attitudeData.axG);
-	attitudeData.ayG = biQuadFilterUpdate(&sensorAccYBiLpF, attitudeData.ayG);
-	attitudeData.azG = biQuadFilterUpdate(&sensorAccZBiLpF, attitudeData.azG);
-
 }
 
 float getMaxValidG() {
@@ -243,16 +156,6 @@ void processGyroSensorData(float dt) {
 	attitudeData.gxDS = constrainToRangeF(attitudeData.gxDS, -SENSOR_GYRO_FLYABLE_VALUE_LIMIT, SENSOR_GYRO_FLYABLE_VALUE_LIMIT);
 	attitudeData.gyDS = constrainToRangeF(attitudeData.gyDS, -SENSOR_GYRO_FLYABLE_VALUE_LIMIT, SENSOR_GYRO_FLYABLE_VALUE_LIMIT);
 	attitudeData.gzDS = constrainToRangeF(attitudeData.gzDS, -SENSOR_GYRO_FLYABLE_VALUE_LIMIT, SENSOR_GYRO_FLYABLE_VALUE_LIMIT);
-
-	//Apply Notch Filtering
-	attitudeData.gxDS = biQuadFilterUpdate(&sensorGyroXBiNtF, attitudeData.gxDS);
-	attitudeData.gyDS = biQuadFilterUpdate(&sensorGyroYBiNtF, attitudeData.gyDS);
-	attitudeData.gzDS = biQuadFilterUpdate(&sensorGyroZBiNtF, attitudeData.gzDS);
-
-	//Bi Quad LPF Filtering
-	attitudeData.gxDS = biQuadFilterUpdate(&sensorGyroXBiLpF, attitudeData.gxDS);
-	attitudeData.gyDS = biQuadFilterUpdate(&sensorGyroYBiLpF, attitudeData.gyDS);
-	attitudeData.gzDS = biQuadFilterUpdate(&sensorGyroZBiLpF, attitudeData.gzDS);
 }
 
 void readAccSensor(float dt) {
@@ -274,47 +177,16 @@ void readAccAndGyroSensor(float dt) {
 /**
  Calculates the temperature offsets by 3rd polynomial
  **/
-void applyAGTempCorrection(float currentTemp) {
-#if SENSOR_APPLY_ACC_TEMP_OFFSET_CORRECTION ==1 || SENSOR_APPLY_GYRO_TEMP_OFFSET_CORRECTION ==1
-	//temp_bias[0] = gyro_coeff_x[0] + gyro_coeff_x[1] * t +  gyro_coeff_x[2] * powf(t,2) + gyro_coeff_x[3] * powf(t,3);
-	float tempP1 = (currentTemp - memsData.offsetTemp);
-	float tempP2 = tempP1 * tempP1;
-	float tempP3 = tempP2 * tempP1;
-#if SENSOR_APPLY_ACC_TEMP_OFFSET_CORRECTION ==1
-	//Acclerometer data is observed to be already temp compensated
-	memsData.accXTempOffset = memsData.accXTempCoeff[0] + memsData.accXTempCoeff[1] * tempP1 + memsData.accXTempCoeff[2] * tempP2 + memsData.accXTempCoeff[3] * tempP3;
-	memsData.accYTempOffset = memsData.accYTempCoeff[0] + memsData.accYTempCoeff[1] * tempP1 + memsData.accYTempCoeff[2] * tempP2 + memsData.accYTempCoeff[3] * tempP3;
-	memsData.accZTempOffset = memsData.accZTempCoeff[0] + memsData.accZTempCoeff[1] * tempP1 + memsData.accZTempCoeff[2] * tempP2 + memsData.accZTempCoeff[3] * tempP3;
-#endif
-#if SENSOR_APPLY_GYRO_TEMP_OFFSET_CORRECTION ==1
-	memsData.gyroXTempOffset = memsData.gyroXTempCoeff[0] + memsData.gyroXTempCoeff[1] * tempP1 + memsData.gyroXTempCoeff[2] * tempP2 + memsData.gyroXTempCoeff[3] * tempP3;
-	memsData.gyroYTempOffset = memsData.gyroYTempCoeff[0] + memsData.gyroYTempCoeff[1] * tempP1 + memsData.gyroYTempCoeff[2] * tempP2 + memsData.gyroYTempCoeff[3] * tempP3;
-	memsData.gyroZTempOffset = memsData.gyroZTempCoeff[0] + memsData.gyroZTempCoeff[1] * tempP1 + memsData.gyroZTempCoeff[2] * tempP2 + memsData.gyroZTempCoeff[3] * tempP3;
-#endif
-#endif
-}
 
 void readTempSensor(float dt) {
 	memsReadTemp();
 	memsApplyTempDataScaling();
-
-	lowPassFilterUpdate(&sensorTempLPF, memsData.tempC, dt);
-	attitudeData.temp = sensorTempLPF.output;
-	applyAGTempCorrection(attitudeData.temp);
 }
 
 void readMagSensor(float dt) {
 	memsReadMag();
 	memsApplyMagDataScaling();
 	memsApplyMagOffsetCorrection();
-	//Aligning the axis to Gyro and Acc
-	lowPassFilterUpdate(&sensorMagXLPF, -memsData.mx, dt);
-	lowPassFilterUpdate(&sensorMagYLPF, memsData.my, dt);
-	lowPassFilterUpdate(&sensorMagZLPF, memsData.mz, dt);
-	//Assign the smoothened values for further use
-	attitudeData.mx = sensorMagXLPF.output;
-	attitudeData.my = sensorMagYLPF.output;
-	attitudeData.mz = sensorMagZLPF.output;
 }
 
 void calculateAccAndGyroBias() {

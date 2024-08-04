@@ -1,14 +1,14 @@
+#include "noiseSensor.h"
+#include "cpuConfig.h"
 #include "rcSensor.h"
 #include "attitudeManager.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "sdkconfig.h"
-
 #include "deltaTimer.h"
 #include "fcLogger.h"
 #include "attitudeSensor.h"
 #include "imu.h"
-#include "managerConfig.h"
 #include "fcStatus.h"
 #include "attitudeControl.h"
 #include "control.h"
@@ -20,13 +20,14 @@ int64_t readGyroLastTimeUs = 0;
 int64_t readAccLastTimeUs = 0;
 int64_t readMagLastTimeUs = 0;
 int64_t readTempLastTimeUs = 0;
+int64_t readNoiseLastTimeUs = 0;
 int64_t updateAttitudeControlLastTimeUs = 0;
 float imuStabilizationDt = 0;
 float crashThresholdG;
 float lastThrottlePercentage = 0;
 
 uint8_t initAttitudeManager() {
-	uint8_t status = initAttitudeSensors(MOTOR_KV, BATTERY_VOLT, MOTOR_NUMBER);
+	uint8_t status = initAttitudeSensors(MOTOR_KV, BATTERY_VOLT, MOTOR_NUMBER, PROP_PAIRS_NUMBER);
 	if (!status) {
 		logString("init[sensor,attitude] > Failure\n");
 		return 0;
@@ -36,7 +37,11 @@ uint8_t initAttitudeManager() {
 		logString("init[control,attitude] > Failure\n");
 		return 0;
 	}
-	logString("init[control,attitude] > Success\n");
+	if (!initNoiseSensor(SENSOR_ACC_SAMPLE_FREQUENCY, SENSOR_GYRO_SAMPLE_FREQUENCY, SENSOR_MAG_SAMPLE_FREQUENCY, SENSOR_TEMP_SAMPLE_FREQUENCY)) {
+		logString("init[sensor,noise] > Failure\n");
+		return 0;
+	}
+	logString("init[sensor,vibration] > Success\n");
 	crashThresholdG = getMaxValidG();
 	return 1;
 }
@@ -101,6 +106,9 @@ void readMagTask(void *arg) {
 		float dt = getUSecTimeInSec(currentTimeUs - readMagLastTimeUs);
 		readMagLastTimeUs = currentTimeUs;
 		readMagSensor(dt);
+		filterMagNoise(dt);
+		//Align mag data to ACC/Gyro
+		attitudeData.mx = -attitudeData.mx;
 		attitudeData.magDt = dt;
 	}
 }
@@ -111,6 +119,7 @@ void readTempTask(void *arg) {
 		float dt = getUSecTimeInSec(currentTimeUs - readTempLastTimeUs);
 		readTempLastTimeUs = currentTimeUs;
 		readTempSensor(dt);
+		filterTempNoise(dt);
 		attitudeData.tempDt = dt;
 	}
 }
@@ -122,6 +131,8 @@ void readAccAndGyroTask(void *arg) {
 	readGyroLastTimeUs = currentTimeUs;
 	if (!fcStatusData.isConfigMode) {
 		readAccAndGyroSensor(dt);
+		filterGyroNoise(dt);
+		filterAccNoise(dt);
 		checkForCrash();
 		attitudeData.gyroDt = dt;
 		attitudeData.accDt = dt;
@@ -160,6 +171,7 @@ void readGyroTask(void *arg) {
 		float dt = getUSecTimeInSec(currentTimeUs - readGyroLastTimeUs);
 		readGyroLastTimeUs = currentTimeUs;
 		readGyroSensor(dt);
+		filterGyroNoise(dt);
 		checkForCrash();
 		attitudeData.gyroDt = dt;
 	}
@@ -171,6 +183,10 @@ void readAccTask(void *arg) {
 		float dt = getUSecTimeInSec(currentTimeUs - readAccLastTimeUs);
 		readAccLastTimeUs = currentTimeUs;
 		readAccSensor(dt);
+#if SENSOR_READ_NOISE_AND_ACC_TOGETHER == 1
+		updateNoise(dt);
+#endif
+		filterAccNoise(dt);
 		checkForCrash();
 		attitudeData.accDt = dt;
 	}
@@ -211,7 +227,6 @@ uint8_t startAccAndGyroReadTimers() {
 	}
 	return 0;
 }
-
 #endif
 
 void updateAttitudeControlTask(void *arg) {
@@ -221,9 +236,7 @@ void updateAttitudeControlTask(void *arg) {
 	if (!fcStatusData.isConfigMode && fcStatusData.canFly && fcStatusData.throttlePercentage > ATTITUDE_CONTROL_MIN_TH_PERCENT) {
 		if (lastThrottlePercentage != fcStatusData.throttlePercentage) {
 			lastThrottlePercentage = fcStatusData.throttlePercentage;
-			calculateMotorNoise(fcStatusData.throttlePercentage);
 		}
-
 		float expectedPitch = (float) rcData.RC_EFFECTIVE_DATA[RC_PITCH_CHANNEL_INDEX];
 		float expectedRoll = -(float) rcData.RC_EFFECTIVE_DATA[RC_ROLL_CHANNEL_INDEX];
 		float expectedYaw = (float) rcData.RC_EFFECTIVE_DATA[RC_YAW_CHANNEL_INDEX];
@@ -231,13 +244,25 @@ void updateAttitudeControlTask(void *arg) {
 		expectedRoll = constrainToRangeF(expectedRoll, -ATT_MAX_PITCH_ROLL, ATT_MAX_PITCH_ROLL);
 
 		controlAttitude(dt, expectedPitch, expectedRoll, expectedYaw, 1.0f, 1.0f, 1.0f, 1.0f);
-		controlData.altitudeControlDt = dt;
+		controlData.attitudeControlDt = dt;
 	} else {
 		lastThrottlePercentage = fcStatusData.throttlePercentage;
-		calculateMotorNoise(fcStatusData.throttlePercentage);
 		resetAttitudeControl(1);
 	}
 }
+
+#if SENSOR_READ_NOISE_AND_ACC_TOGETHER == 0
+void readNoiseTask(void *arg) {
+	if (!fcStatusData.isConfigMode) {
+		int64_t currentTimeUs = getTimeUSec();
+		float dt = getUSecTimeInSec(currentTimeUs - readNoiseLastTimeUs);
+		readNoiseLastTimeUs = currentTimeUs;
+		updateNoise(dt);
+	}
+}
+const esp_timer_create_args_t readNoisePeriodicTimerArgs = { .callback = &readNoiseTask, .name = "readNoiseTask" };
+esp_timer_handle_t readNoisePeriodicTimer;
+#endif
 
 const esp_timer_create_args_t imuPeriodicTimerArgs = { .callback = &updateIMUTask, .name = "updateIMUTask" };
 esp_timer_handle_t imuPeriodicTimer;
@@ -248,8 +273,8 @@ esp_timer_handle_t readMagPeriodicTimer;
 const esp_timer_create_args_t readTempPeriodicTimerArgs = { .callback = &readTempTask, .name = "readTempTask" };
 esp_timer_handle_t readTempPeriodicTimer;
 
-const esp_timer_create_args_t altControlPeriodicTimerArgs = { .callback = &updateAttitudeControlTask, .name = "altcontrol" };
-esp_timer_handle_t altControlPeriodicTimer;
+const esp_timer_create_args_t attControlPeriodicTimerArgs = { .callback = &updateAttitudeControlTask, .name = "attControl" };
+esp_timer_handle_t attControlPeriodicTimer;
 
 uint8_t attitudeManagerCreateTimers() {
 	uint8_t status = 0;
@@ -264,12 +289,23 @@ uint8_t attitudeManagerCreateTimers() {
 				err = esp_timer_create(&readTempPeriodicTimerArgs, &readTempPeriodicTimer);
 				if (err == ESP_OK) {
 					logString("Attitude Manager , Temp Read Timer Created , Success!\n");
-					err = esp_timer_create(&altControlPeriodicTimerArgs, &altControlPeriodicTimer);
+					err = esp_timer_create(&attControlPeriodicTimerArgs, &attControlPeriodicTimer);
 					if (err == ESP_OK) {
-						logString("Attitude Manager , Alt control Read Timer Created , Success!\n");
+						logString("Attitude Manager , Att control Timer Created , Success!\n");
+#if SENSOR_READ_NOISE_AND_ACC_TOGETHER == 0
+							status = 1;
+							err = esp_timer_create(&readNoisePeriodicTimerArgs, &readNoisePeriodicTimer);
+							if (err == ESP_OK) {
+								logString("Attitude Manager , Noise Read Timer Created , Success!\n");
+								status = 1;
+							} else {
+								logString("Attitude Manager , Noise Read Timer Created , Failed!\n");
+							}
+						#else
 						status = 1;
+#endif
 					} else {
-						logString("Attitude Manager , Alt control Read Timer Creation, Failed!\n");
+						logString("Attitude Manager , Att control Timer Creation, Failed!\n");
 					}
 				} else {
 					logString("Attitude Manager , Temp Read Timer Created , Failed!\n");
@@ -299,12 +335,22 @@ uint8_t attitudeManagerStartTimers() {
 				err = esp_timer_start_periodic(readTempPeriodicTimer, SENSOR_TEMP_SAMPLE_PERIOD_US);
 				if (err == ESP_OK) {
 					logString("Attitude Manager , Start Timers, Read Temp Start , Success!\n");
-					err = esp_timer_start_periodic(altControlPeriodicTimer, ATTITUDE_CONTROL_UPDATE_PERIOD_US);
+					err = esp_timer_start_periodic(attControlPeriodicTimer, ATTITUDE_CONTROL_UPDATE_PERIOD_US);
 					if (err == ESP_OK) {
-						logString("Attitude Manager , Start Timers, Alt control Start , Success!\n");
+						logString("Attitude Manager , Start Timers, Att control Start , Success!\n");
+#if SENSOR_READ_NOISE_AND_ACC_TOGETHER == 0
+						err = esp_timer_start_periodic(readNoisePeriodicTimer, NOISE_SAMPLE_PERIOD_US);
+						if (err == ESP_OK) {
+							logString("Attitude Manager , Start Timers, Read Noise Start , Success!\n");
+							status = 1;
+						} else {
+							logString("Attitude Manager , Start Timers, Read Noise Start , Failed!\n");
+						}
+#else
 						status = 1;
+#endif
 					} else {
-						logString("Attitude Manager , Start Timers, Alt control Start , Failed!\n");
+						logString("Attitude Manager , Start Timers, Att control Start , Failed!\n");
 					}
 				} else {
 					logString("Attitude Manager , Start Timers, Read Temp Start , Failed!\n");
@@ -326,11 +372,6 @@ void attitudeManagerTask(void *pvParameters) {
 	if (attitudeManagerCreateTimers()) {
 		if (attitudeManagerStartTimers()) {
 			logString("Attitude Manager , Timer Start success , Task running!\n");
-			/*
-			 for (;;) {
-			 vTaskDelay(1);
-			 }
-			 */
 			vTaskDelete(attitudeMgrTaskHandle);
 		} else {
 			logString("Attitude Manager , Timer Start failed , Task Exiting!\n");
@@ -363,6 +404,7 @@ void calibarateAccAndGyroForTemp() {
 
 uint8_t resetAttitudeManager() {
 	resetAttitudeControl(1);
+	resetNoiseSensor();
 	return 1;
 }
 

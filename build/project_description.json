@@ -1,7 +1,7 @@
 {
     "version":            "1.1",
     "project_name":       "ESP32_FC",
-    "project_version":    "32aa984-dirty",
+    "project_version":    "0ff09ea-dirty",
     "project_path":       "F:/Bijesh/ESP_Workspace/ESP32_FC",
     "idf_path":           "F:/softwares/Espressif/esp-idf-v5.2.1",
     "build_dir":          "F:/Bijesh/ESP_Workspace/ESP32_FC/build",
@@ -685,7 +685,7 @@
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "file": "F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/fcDSP/libfcDSP.a",
-            "sources": [ "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP/biQuadFilter.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP/ewmaFilter.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP/highPassFilter.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP/leakyIntegrationFilter.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP/lowPassFilter.c" ],
+            "sources": [ "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP/biQuadFilter.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP/ewmaFilter.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP/fft.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP/highPassFilter.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP/leakyIntegrationFilter.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcDSP/lowPassFilter.c" ],
             "include_dirs": [ "include" ]
         },
         "fcDevices": {
@@ -755,7 +755,7 @@
             "dir": "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcManager",
             "type": "LIBRARY",
             "lib": "__idf_fcManager",
-            "reqs": [ "fcTimer", "fcIMU", "fcSensors", "fcCalibration", "fcUtil", "esp_timer", "fcLogger", "fcControl", "fcCommon" ],
+            "reqs": [ "fcTimer", "fcIMU", "fcSensors", "fcCalibration", "fcUtil", "esp_timer", "fcLogger", "fcControl", "fcCommon", "fcDSP" ],
             "priv_reqs": [],
             "managed_reqs": [],
             "managed_priv_reqs": [],
@@ -775,7 +775,7 @@
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "file": "F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/fcSensors/libfcSensors.a",
-            "sources": [ "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/altitude/altitudeSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/attitude/attitudeSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/config/configSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/indicator/indicatorSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/pwm/pwmSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/rc/rxRcSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/rc/wifiRcSensor.c" ],
+            "sources": [ "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/altitude/altitudeSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/attitude/attitudeSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/config/configSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/indicator/indicatorSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/noise/noiseSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/pwm/pwmSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/rc/rxRcSensor.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcSensors/rc/wifiRcSensor.c" ],
             "include_dirs": [ "include" ]
         },
         "fcTimer": {
@@ -820,7 +820,7 @@
             "managed_reqs": [],
             "managed_priv_reqs": [],
             "file": "F:/Bijesh/ESP_Workspace/ESP32_FC/build/esp-idf/fcUtil/libfcUtil.a",
-            "sources": [ "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcUtil/mathUtil.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcUtil/matrixUtil.c" ],
+            "sources": [ "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcUtil/commonUtil.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcUtil/mathUtil.c", "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcUtil/matrixUtil.c" ],
             "include_dirs": [ "include" ]
         },
         "freertos": {
@@ -2370,7 +2370,7 @@
             "prefix": "idf",
             "dir": "F:/Bijesh/ESP_Workspace/ESP32_FC/fc/fcManager",
             "lib": "__idf_fcManager",
-            "reqs": [ "fcTimer", "fcIMU", "fcSensors", "fcCalibration", "fcUtil", "esp_timer", "fcLogger", "fcControl", "fcCommon" ],
+            "reqs": [ "fcTimer", "fcIMU", "fcSensors", "fcCalibration", "fcUtil", "esp_timer", "fcLogger", "fcControl", "fcCommon", "fcDSP" ],
             "priv_reqs": [],
             "managed_reqs": [],
             "managed_priv_reqs": [],

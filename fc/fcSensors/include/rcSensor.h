@@ -10,13 +10,13 @@
 #define RC_CHANNEL_MAX_INDEX (RC_CHANNEL_COUNT-1)
 #define RC_CHANNEL_DEAD_BAND 3
 
-#define RC_YAW_CHANNEL_INDEX          0 // Channel 1
-#define RC_TH_CHANNEL_INDEX           1 // Channel 2
-#define RC_PITCH_CHANNEL_INDEX        2 // Channel 4
-#define RC_ROLL_CHANNEL_INDEX         3 // Channel 3
+#define RC_YAW_CHANNEL_INDEX         0 // Channel 1
+#define RC_TH_CHANNEL_INDEX          1 // Channel 2
+#define RC_PITCH_CHANNEL_INDEX       2 // Channel 4
+#define RC_ROLL_CHANNEL_INDEX        3 // Channel 3
 
-#define RC_FLIGHT_MODE_CHANNEL_INDEX  4 //Channel 5 //Reserved
-#define RC_AUX_CHANNEL5_INDEX         5 //Channel 6 //None
+#define RC_FLIGHT_MODE_CHANNEL_INDEX 4 //Channel 5 //Reserved
+#define RC_AUX_CHANNEL5_INDEX        5 //Channel 6 //None
 
 #define RC_START_CHANNEL_INDEX       6 //Channel 7 //swa
 #define RC_POS_CHANNEL_INDEX         7 //Channel 8  //swb

@@ -3,6 +3,30 @@
 #include <stdio.h>
 #include <inttypes.h>
 
+#define MEMS_SENSOR_LSM9DS1 1
+#define MEMS_SENSOR_MPU9250 2
+#define MEMS_SENSOR_SELECTED MEMS_SENSOR_LSM9DS1
+
+#if MEMS_SENSOR_SELECTED == MEMS_SENSOR_LSM9DS1
+#define MEMS_ACC_SAMPLE_FREQUENCY 1024.0f
+#define MEMS_GYRO_SAMPLE_FREQUENCY 4096.0f
+#define MEMS_MAG_SAMPLE_FREQUENCY 512.0f
+#define MEMS_TEMP_SAMPLE_FREQUENCY 64.0f
+
+#define MEMS_APPLY_ACC_TEMP_OFFSET_CORRECTION 0
+#define MEMS_APPLY_GYRO_TEMP_OFFSET_CORRECTION 1
+#endif
+
+#if MEMS_SENSOR_SELECTED == MEMS_SENSOR_MPU9250
+#define MEMS_ACC_SAMPLE_FREQUENCY 800.0f
+#define MEMS_GYRO_SAMPLE_FREQUENCY 4000.0f
+#define MEMS_MAG_SAMPLE_FREQUENCY 400.0f
+#define MEMS_TEMP_SAMPLE_FREQUENCY 20.0f
+
+#define MEMS_APPLY_ACC_TEMP_OFFSET_CORRECTION 1
+#define MEMS_APPLY_GYRO_TEMP_OFFSET_CORRECTION 1
+#endif
+
 typedef struct _MEMSDATA MEMSDATA;
 struct _MEMSDATA {
 	//Global buffer for read write operations
@@ -25,9 +49,9 @@ struct _MEMSDATA {
 	double accYTempCoeff[4];
 	double accZTempCoeff[4];
 
-	float accXTempOffset;
-	float accYTempOffset;
-	float accZTempOffset;
+	volatile float accXTempOffset;
+	volatile float accYTempOffset;
+	volatile float accZTempOffset;
 
 	float gyroXTempOffset;
 	float gyroYTempOffset;
@@ -45,29 +69,7 @@ struct _MEMSDATA {
 	float axG, ayG, azG, gxDS, gyDS, gzDS, mx, my, mz;
 };
 
-#define MEMS_SENSOR_LSM9DS1 1
-#define MEMS_SENSOR_MPU9250 2
-#define MEMS_SENSOR_SELECTED MEMS_SENSOR_LSM9DS1
-
-#if MEMS_SENSOR_SELECTED == MEMS_SENSOR_LSM9DS1
-#define MEMS_ACC_SAMPLE_FREQUENCY 1000.0f
-#define MEMS_GYRO_SAMPLE_FREQUENCY 4000.0f
-#define MEMS_MAG_SAMPLE_FREQUENCY 500.0f
-#define MEMS_TEMP_SAMPLE_FREQUENCY 20.0f
-
-#define MEMS_APPLY_ACC_TEMP_OFFSET_CORRECTION 0
-#define MEMS_APPLY_GYRO_TEMP_OFFSET_CORRECTION 1
-#endif
-
-#if MEMS_SENSOR_SELECTED == MEMS_SENSOR_MPU9250
-#define MEMS_ACC_SAMPLE_FREQUENCY 800.0f
-#define MEMS_GYRO_SAMPLE_FREQUENCY 4000.0f
-#define MEMS_MAG_SAMPLE_FREQUENCY 400.0f
-#define MEMS_TEMP_SAMPLE_FREQUENCY 20.0f
-
-#define MEMS_APPLY_ACC_TEMP_OFFSET_CORRECTION 1
-#define MEMS_APPLY_GYRO_TEMP_OFFSET_CORRECTION 1
-#endif
+extern MEMSDATA memsData;
 
 uint8_t memsInit(void);
 void memsReadAccAndGyro(void);

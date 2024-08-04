@@ -1,9 +1,9 @@
+#include "cpuConfig.h"
 #include "configManager.h"
 
 #include "indicatorSensor.h"
 #include "calibration.h"
 #include "fcLogger.h"
-#include "managerConfig.h"
 #include "configSensor.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

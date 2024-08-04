@@ -1,13 +1,11 @@
+#include "cpuConfig.h"
 #include "rcSensor.h"
 #include "fcLogger.h"
 #include "deltaTimer.h"
 #include "pwmSensor.h"
 #include "pwmManager.h"
 #include "attitudeSensor.h"
-
-#include "managerConfig.h"
 #include "fcManager.h"
-
 #include "indicatorSensor.h"
 #include "fcStatus.h"
 #include "attitudeManager.h"
@@ -66,12 +64,10 @@ uint8_t initFlightController() {
 }
 
 uint8_t startFlightTasks() {
-
 	if (!startRCManager()) {
 		logString("init[Start , RCManager] > Failure\n");
 		return 0;
 	}
-
 	if (!startAttitudeManager()) {
 		logString("init[Start , AttitudeManager] > Failure\n");
 		return 0;
@@ -83,13 +79,11 @@ uint8_t startFlightTasks() {
 		return 0;
 	}
 	logString("init[Start , AltitudeManager] > Success\n");
-
 	if (!startPWMManager()) {
 		logString("init[Start , PWMManager] > Failure\n");
 		return 0;
 	}
 	logString("init[Start , PWMManager] > Success\n");
-
 	if (!startDebugManager()) {
 		logString("init[Start , DebugManager] > Failure\n");
 		return 0;

@@ -1,3 +1,4 @@
+#include "cpuConfig.h"
 #include "pwmSensor.h"
 #include "pwmManager.h"
 #include "freertos/FreeRTOS.h"
@@ -8,7 +9,6 @@
 #include "fcLogger.h"
 #include "deltaTimer.h"
 #include "delayTimer.h"
-#include "managerConfig.h"
 #include "rcManager.h"
 #include "fcStatus.h"
 #include "control.h"

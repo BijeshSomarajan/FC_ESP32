@@ -101,9 +101,21 @@ float updateHeadingDelta() {
 
 void controlAttitude(float dt, float expectedPitch, float expectedRoll, float expectedYaw, float pitchRollPGain, float pitchRollIGain, float pitchRollRatePGain, float pitchRollRateDGain) {
 	float headingDelta = updateHeadingDelta();
+
+	float pitch = imuData.pitch;
+	float roll = imuData.roll;
+
+#if ATT_CONTROL_MASTER_DB_P_ENABLED == 1
+	pitch = applyDeadBandFloat(0, pitch, ATT_CONTROL_MASTER_DB_P);
+#endif
+
+#if ATT_CONTROL_MASTER_DB_R_ENABLED == 1
+	roll = applyDeadBandFloat(0, roll, ATT_CONTROL_MASTER_DB_R);
+#endif
+
 	//Apply attitude PIDs
-	pidUpdateWithGains(&attitudePitchPID, -imuData.pitch, expectedPitch, dt, pitchRollPGain, pitchRollIGain, 0);
-	pidUpdateWithGains(&attitudeRollPID, -imuData.roll, expectedRoll, dt, pitchRollPGain, pitchRollIGain, 0);
+	pidUpdateWithGains(&attitudePitchPID, -pitch, expectedPitch, dt, pitchRollPGain, pitchRollIGain, 0);
+	pidUpdateWithGains(&attitudeRollPID, -roll, expectedRoll, dt, pitchRollPGain, pitchRollIGain, 0);
 	pidUpdate(&attitudeYawPID, -headingDelta, -expectedYaw, dt);
 
 	//Apply attitude rate PIDs
