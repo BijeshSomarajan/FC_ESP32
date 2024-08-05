@@ -12,12 +12,12 @@ FFTContext fftX;
 FFTContext fftY;
 FFTContext fftZ;
 
-const float NOISE_SENSOR_NTF_ACC_Q[] = { NOISE_SENSOR_NTF_GYRO_Q0, NOISE_SENSOR_NTF_GYRO_Q1, NOISE_SENSOR_NTF_GYRO_Q2 }; //0.920f // Greater more sharp filtering
-const float NOISE_SENSOR_NTF_GYRO_Q[] = { NOISE_SENSOR_NTF_ACC_Q0, NOISE_SENSOR_NTF_ACC_Q1, NOISE_SENSOR_NTF_ACC_Q2 }; //0.920f // Greater more sharp filtering
-
 //BiQuald LPF and Notch Filters
 LOWPASSFILTER noiseSensorAccXLpF, noiseSensorAccYLpF, noiseSensorAccZLpF;
 LOWPASSFILTER noiseSensorGyroXLpF, noiseSensorGyroYLpF, noiseSensorGyroZLpF;
+
+const float NOISE_SENSOR_NTF_ACC_Q_ARRAY[3][3] = NOISE_SENSOR_NTF_ACC_Q;
+const float NOISE_SENSOR_NTF_GYRO_Q_ARRAY[3][3] = NOISE_SENSOR_NTF_GYRO_Q;
 
 BIQUADFILTER noiseSensorAccXBiNTF[NOISE_SENSOR_NTF_ACC_FREQUENCY_N][NOISE_SENSOR_NTF_GYRO_HARMONIC_N];
 BIQUADFILTER noiseSensorAccYBiNTF[NOISE_SENSOR_NTF_ACC_FREQUENCY_N][NOISE_SENSOR_NTF_GYRO_HARMONIC_N];
@@ -27,8 +27,9 @@ BIQUADFILTER noiseSensorGyroXBiNTF[NOISE_SENSOR_NTF_GYRO_FREQUENCY_N][NOISE_SENS
 BIQUADFILTER noiseSensorGyroYBiNTF[NOISE_SENSOR_NTF_GYRO_FREQUENCY_N][NOISE_SENSOR_NTF_GYRO_HARMONIC_N];
 BIQUADFILTER noiseSensorGyroZBiNTF[NOISE_SENSOR_NTF_GYRO_FREQUENCY_N][NOISE_SENSOR_NTF_GYRO_HARMONIC_N];
 //Low pass filters
-LOWPASSFILTER noiseSensorTempLPF;
-LOWPASSFILTER noiseSensorMagXLPF, noiseSensorMagYLPF, noiseSensorMagZLPF;
+		LOWPASSFILTER noiseSensorTempLPF;
+		LOWPASSFILTER noiseSensorMagXLPF,
+noiseSensorMagYLPF, noiseSensorMagZLPF;
 
 void updateNoise(float dt) {
 #if NOISE_SENSOR_LPF_ACC_ENABLED == 1 || NOISE_SENSOR_NTF_GYRO_ENABLED == 1
@@ -114,7 +115,6 @@ void calculateTempCorrectionOffsets(float currentTemp) {
 	float tempP2 = tempP1 * tempP1;
 	float tempP3 = tempP2 * tempP1;
 #if NOISE_SENSOR_TEMP_CORRECTION_ACC_ENABLED ==1
-	//Accelerometer data is observed to be already temperate compensated
 	memsData.accXTempOffset = memsData.accXTempCoeff[0] + memsData.accXTempCoeff[1] * tempP1 + memsData.accXTempCoeff[2] * tempP2 + memsData.accXTempCoeff[3] * tempP3;
 	memsData.accYTempOffset = memsData.accYTempCoeff[0] + memsData.accYTempCoeff[1] * tempP1 + memsData.accYTempCoeff[2] * tempP2 + memsData.accYTempCoeff[3] * tempP3;
 	memsData.accZTempOffset = memsData.accZTempCoeff[0] + memsData.accZTempCoeff[1] * tempP1 + memsData.accZTempCoeff[2] * tempP2 + memsData.accZTempCoeff[3] * tempP3;
@@ -151,21 +151,22 @@ uint8_t initNoiseSensor(float accSampleFrequency, float gyroSampleFrequency, flo
 	lowPassFilterInit(&noiseSensorGyroYLpF, NOISE_SENSOR_LPF_GYRO_FREQUENCY);
 	lowPassFilterInit(&noiseSensorGyroZLpF, NOISE_SENSOR_LPF_GYRO_FREQUENCY);
 #endif
+
 #if NOISE_SENSOR_NTF_ACC_ENABLED == 1
 	for (int fIndx = 0; fIndx < NOISE_SENSOR_NTF_ACC_FREQUENCY_N; fIndx++) {
 		for (int hIndx = 0; hIndx < NOISE_SENSOR_NTF_ACC_HARMONIC_N; hIndx++) {
-			biQuadFilterInit(&noiseSensorAccXBiNTF[fIndx][hIndx], BIQUAD_NOTCH, NOISE_SENSOR_NTF_ACC_MIN_FREQUENCY, accSampleFrequency, NOISE_SENSOR_NTF_ACC_Q[hIndx], NOISE_SENSOR_NTF_ACC_PEAK_GAIN);
-			biQuadFilterInit(&noiseSensorAccYBiNTF[fIndx][hIndx], BIQUAD_NOTCH, NOISE_SENSOR_NTF_ACC_MIN_FREQUENCY, accSampleFrequency, NOISE_SENSOR_NTF_ACC_Q[hIndx], NOISE_SENSOR_NTF_ACC_PEAK_GAIN);
-			biQuadFilterInit(&noiseSensorAccZBiNTF[fIndx][hIndx], BIQUAD_NOTCH, NOISE_SENSOR_NTF_ACC_MIN_FREQUENCY, accSampleFrequency, NOISE_SENSOR_NTF_ACC_Q[hIndx], NOISE_SENSOR_NTF_ACC_PEAK_GAIN);
+			biQuadFilterInit(&noiseSensorAccXBiNTF[fIndx][hIndx], BIQUAD_NOTCH, NOISE_SENSOR_NTF_ACC_MIN_FREQUENCY, accSampleFrequency, NOISE_SENSOR_NTF_ACC_Q_ARRAY[fIndx][hIndx], NOISE_SENSOR_NTF_ACC_PEAK_GAIN);
+			biQuadFilterInit(&noiseSensorAccYBiNTF[fIndx][hIndx], BIQUAD_NOTCH, NOISE_SENSOR_NTF_ACC_MIN_FREQUENCY, accSampleFrequency, NOISE_SENSOR_NTF_ACC_Q_ARRAY[fIndx][hIndx], NOISE_SENSOR_NTF_ACC_PEAK_GAIN);
+			biQuadFilterInit(&noiseSensorAccZBiNTF[fIndx][hIndx], BIQUAD_NOTCH, NOISE_SENSOR_NTF_ACC_MIN_FREQUENCY, accSampleFrequency, NOISE_SENSOR_NTF_ACC_Q_ARRAY[fIndx][hIndx], NOISE_SENSOR_NTF_ACC_PEAK_GAIN);
 		}
 	}
 #endif
 #if NOISE_SENSOR_NTF_GYRO_ENABLED == 1
 	for (int fIndx = 0; fIndx < NOISE_SENSOR_NTF_GYRO_FREQUENCY_N; fIndx++) {
 		for (int hIndx = 0; hIndx < NOISE_SENSOR_NTF_GYRO_HARMONIC_N; hIndx++) {
-			biQuadFilterInit(&noiseSensorGyroXBiNTF[fIndx][hIndx], BIQUAD_NOTCH, NOISE_SENSOR_NTF_GYRO_MIN_FREQUENCY, gyroSampleFrequency, NOISE_SENSOR_NTF_GYRO_Q[hIndx], NOISE_SENSOR_NTF_GYRO_PEAK_GAIN);
-			biQuadFilterInit(&noiseSensorGyroYBiNTF[fIndx][hIndx], BIQUAD_NOTCH, NOISE_SENSOR_NTF_GYRO_MIN_FREQUENCY, gyroSampleFrequency, NOISE_SENSOR_NTF_GYRO_Q[hIndx], NOISE_SENSOR_NTF_GYRO_PEAK_GAIN);
-			biQuadFilterInit(&noiseSensorGyroZBiNTF[fIndx][hIndx], BIQUAD_NOTCH, NOISE_SENSOR_NTF_GYRO_MIN_FREQUENCY, gyroSampleFrequency, NOISE_SENSOR_NTF_GYRO_Q[hIndx], NOISE_SENSOR_NTF_GYRO_PEAK_GAIN);
+			biQuadFilterInit(&noiseSensorGyroXBiNTF[fIndx][hIndx], BIQUAD_NOTCH, NOISE_SENSOR_NTF_GYRO_MIN_FREQUENCY, gyroSampleFrequency, NOISE_SENSOR_NTF_GYRO_Q_ARRAY[fIndx][hIndx], NOISE_SENSOR_NTF_GYRO_PEAK_GAIN);
+			biQuadFilterInit(&noiseSensorGyroYBiNTF[fIndx][hIndx], BIQUAD_NOTCH, NOISE_SENSOR_NTF_GYRO_MIN_FREQUENCY, gyroSampleFrequency, NOISE_SENSOR_NTF_GYRO_Q_ARRAY[fIndx][hIndx], NOISE_SENSOR_NTF_GYRO_PEAK_GAIN);
+			biQuadFilterInit(&noiseSensorGyroZBiNTF[fIndx][hIndx], BIQUAD_NOTCH, NOISE_SENSOR_NTF_GYRO_MIN_FREQUENCY, gyroSampleFrequency, NOISE_SENSOR_NTF_GYRO_Q_ARRAY[fIndx][hIndx], NOISE_SENSOR_NTF_GYRO_PEAK_GAIN);
 		}
 	}
 #endif

@@ -127,7 +127,6 @@ void updateFFT(FFTContext *ctx, float origSample) {
 		// Calculate magnitudes and corresponding frequencies of FFT bins
 		for (int index = 1; index < FFT_HALF_N; index++) {
 			ctx->fftMagnitudes[index] = fastSqrtf(ctx->fftDataOut[index].real * ctx->fftDataOut[index].real + ctx->fftDataOut[index].imag * ctx->fftDataOut[index].imag);
-			//ctx->fftMagnitudes[index] = applyDeadBandFloat(0, ctx->fftMagnitudes[index], 0.02f);
 			//Determine Top Frequencies
 			if (ctx->topMagn[0] < ctx->fftMagnitudes[index]) {
 				ctx->topMagn[2] = ctx->topMagn[1];
@@ -144,7 +143,7 @@ void updateFFT(FFTContext *ctx, float origSample) {
 			} else if (ctx->topMagn[2] < ctx->fftMagnitudes[index]) {
 				ctx->topMagn[2] = ctx->fftMagnitudes[index];
 				ctx->topFreq[2] = fftBinFrequencies[index - 1] ;//+ fftBinWidthHalf;
-				;
+
 			}
 		}
 		bubbleSortDecF(ctx->topFreq, 3);

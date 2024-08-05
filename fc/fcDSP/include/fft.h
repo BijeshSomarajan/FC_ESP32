@@ -8,7 +8,7 @@
 #include "lowPassFilter.h"
 #include "biQuadFilter.h"
 
-#define FFT_N 32 // Must be a power of 2
+#define FFT_N 128 // Must be a power of 2 // 128 Flies!
 #define FFT_TOP_FREQ_N 3 // Must be a power of 2
 #define FFT_HALF_N FFT_N/2 // Must be a power of 2
 

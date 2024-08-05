@@ -1,7 +1,7 @@
 {
     "version":            "1.1",
     "project_name":       "ESP32_FC",
-    "project_version":    "0ff09ea-dirty",
+    "project_version":    "81f7ba2-dirty",
     "project_path":       "F:/Bijesh/ESP_Workspace/ESP32_FC",
     "idf_path":           "F:/softwares/Espressif/esp-idf-v5.2.1",
     "build_dir":          "F:/Bijesh/ESP_Workspace/ESP32_FC/build",
